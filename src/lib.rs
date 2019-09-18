@@ -95,14 +95,17 @@ impl HSpan {
         noop("no-op, intentionally disconnected Span".into())
     }
 
-    /// Useful for retrofitting existing codebases with traces. Use this to
-    /// create a valid span that is not hooked up to any actual tracer, but which
-    /// at least provides some visibility into something that needs fixing
+    /// Useful for retrofitting existing codebases with traces. This is a noop,
+    /// but signals intent to eventually hook this up in a meaningful way,
+    /// perhaps requiring some restructuring of the underlying code to make
+    /// hookup possible.
     pub fn todo(reason: &'static str) -> Self {
         noop(format!("TODO: {}", reason))
     }
 
-    /// TODO: remove all of these. This is a more extreme version of todo()
+    /// Like todo(), but lazier. There is no reason why this span can't be
+    /// hooked up other than lack of programmer time. This signals that
+    /// it'll be simple to hook up whenever you get around it.
     pub fn fixme() -> Self {
         noop("not yet hooked up".into())
     }
