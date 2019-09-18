@@ -12,36 +12,37 @@ use rustracing_jaeger::span::SpanContextState;
 use std::{borrow::Cow, io::Cursor};
 
 pub use rustracing::sampler::*;
-pub use rustracing_jaeger::{Result, *};
+pub use rustracing_jaeger::{Result, Span as RtSpan, *};
 
-pub type Span = rustracing_jaeger::Span;
 pub type SpanContext = rustracing_jaeger::span::SpanContext;
 pub type Tracer = rustracing_jaeger::Tracer;
 pub type Reporter = rustracing_jaeger::reporter::JaegerCompactReporter;
 
-/// A wrapper around a simple rustracing_jaeger::Span, providing some
+pub type Span = HSpan;
+
+/// A wrapper around a simple rustracing_jaeger::RtSpan, providing some
 /// convenience functions.
 /// It overshadows the lower-level `child` and `follower` methods
 /// with simpler versions. To access the lower-level methods, use `.0`.
 #[derive(Debug, Shrinkwrap)]
 #[shrinkwrap(mutable)]
-pub struct HSpan(pub Span);
+pub struct HSpan(pub RtSpan);
 
-impl From<Span> for HSpan {
-    fn from(span: Span) -> HSpan {
+impl From<RtSpan> for HSpan {
+    fn from(span: RtSpan) -> HSpan {
         HSpan(span)
     }
 }
 
 impl HSpan {
     pub fn event<S: Into<Cow<'static, str>>>(&mut self, msg: S) {
-        self.log(|l| {
+        self.0.log(|l| {
             l.std().event(msg);
         })
     }
 
     pub fn error<S: Into<Cow<'static, str>>>(&mut self, kind: S, msg: S) {
-        self.log(|l| {
+        self.0.log(|l| {
             l.error().kind(kind).message(msg);
         })
     }
@@ -55,9 +56,9 @@ impl HSpan {
         &'a self,
         operation_name: N,
         f: F,
-    ) -> Span
+    ) -> RtSpan
     where
-        F: FnOnce(StartSpanOptions<'_, AllSampler, SpanContextState>) -> Span,
+        F: FnOnce(StartSpanOptions<'_, AllSampler, SpanContextState>) -> RtSpan,
     {
         self.0.child(operation_name, f)
     }
@@ -67,9 +68,9 @@ impl HSpan {
         &'a self,
         operation_name: N,
         f: F,
-    ) -> Span
+    ) -> RtSpan
     where
-        F: FnOnce(StartSpanOptions<'_, AllSampler, SpanContextState>) -> Span,
+        F: FnOnce(StartSpanOptions<'_, AllSampler, SpanContextState>) -> RtSpan,
     {
         self.0.follower(operation_name, f)
     }
@@ -89,10 +90,10 @@ impl HSpan {
         SpanWrap::new(data, self)
     }
 
-    /// e.g. for times when a function requires a Span but we don't desire to actually
+    /// e.g. for times when a function requires a RtSpan but we don't desire to actually
     /// instrument that function call.
     pub fn noop() -> Self {
-        noop("no-op, intentionally disconnected Span".into())
+        noop("no-op, intentionally disconnected RtSpan".into())
     }
 
     /// Useful for retrofitting existing codebases with traces. This is a noop,
@@ -118,7 +119,7 @@ impl HSpan {
 /// with minimal boilerplate.
 ///
 /// The use of shrinkwrap allows the entire struct to be used as if it were
-/// a bare T (in most situations), but the Span can also be extracted.
+/// a bare T (in most situations), but the RtSpan can also be extracted.
 #[derive(Shrinkwrap)]
 #[shrinkwrap(mutable)]
 pub struct SpanWrap<T> {
@@ -143,7 +144,7 @@ pub type EncodedSpanContext = Vec<u8>;
 pub struct HSpanContext(pub SpanContext);
 
 impl HSpanContext {
-    /// Create a follower Span from this SpanContext
+    /// Create a follower RtSpan from this SpanContext
     /// NB: there is intentionally no method to create a child span from a context,
     /// since it's assumed that all inter-process points of a trace are async and
     /// the parent span will have ended before this one does
