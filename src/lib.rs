@@ -1,5 +1,3 @@
-#![feature(rustc_private)]
-
 extern crate crossbeam_channel;
 extern crate rustracing;
 extern crate rustracing_jaeger;
