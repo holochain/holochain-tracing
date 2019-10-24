@@ -1,8 +1,4 @@
-use crate::{span_map::*, Reporter, Tracer};
-use rustracing::span::SpanReceiver;
-use rustracing_jaeger::span::SpanContextState;
-use std::{borrow::Cow, io::Cursor};
-use std::{thread, time::Duration};
+use crate::{span_map::*, Tracer};
 
 pub use rustracing::sampler::*;
 pub use rustracing_jaeger::{Result, Span as RtSpan, *};

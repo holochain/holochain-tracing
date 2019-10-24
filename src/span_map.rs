@@ -78,7 +78,7 @@ pub fn print_span_map(span_map: &SpanMap) {
         }
     }
     // print tree
-    for (span_offset, span_id) in root_tree.iter() {
+    for (_start_time, span_id) in root_tree.iter() {
         print_span_tree(&children_map, &sibling_map, span_map, **span_id);
     }
 }

@@ -1,16 +1,9 @@
 use holochain_tracing::*;
-use std::collections::HashMap;
 
 extern crate crossbeam_channel;
 extern crate rustracing;
 extern crate rustracing_jaeger;
 
-use crate::rustracing::carrier::{ExtractFromBinary, InjectToBinary};
-use rustracing::span::{
-    FinishedSpan as RtFinishedSpan, SpanReceiver, SpanReference::*, StartSpanOptions,
-};
-use rustracing_jaeger::{reporter::JaegerCompactReporter, span::SpanContextState};
-use std::{borrow::Cow, io::Cursor};
 use std::{thread, time::Duration};
 
 use holochain_tracing::tracer_jaeger::new_jaeger_tracer;

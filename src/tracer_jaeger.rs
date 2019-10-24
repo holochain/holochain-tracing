@@ -1,12 +1,10 @@
-use crate::{span_map::*, Reporter, Tracer};
+use crate::{Reporter, Tracer};
 use rustracing::span::SpanReceiver;
 use rustracing_jaeger::span::SpanContextState;
-use std::{borrow::Cow, io::Cursor};
-use std::{thread, time::Duration};
+use std::thread;
 
 pub use rustracing::sampler::*;
 pub use rustracing_jaeger::{Result, Span as RtSpan, *};
-use std::collections::HashMap;
 
 fn run_reporter_thread(service_name: &'static str, span_rx: SpanReceiver<SpanContextState>) {
     thread::spawn(move || {
