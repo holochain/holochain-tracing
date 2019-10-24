@@ -1,5 +1,9 @@
 #![feature(rustc_private)]
 
+pub mod span_map;
+pub mod tracer_jaeger;
+pub mod tracer_console;
+
 extern crate crossbeam_channel;
 extern crate rustracing;
 extern crate rustracing_jaeger;
@@ -17,7 +21,7 @@ pub use rustracing_jaeger::{Result, Span as RtSpan, *};
 pub type SpanContext = rustracing_jaeger::span::SpanContext;
 pub type Tracer = rustracing_jaeger::Tracer;
 pub type Reporter = rustracing_jaeger::reporter::JaegerCompactReporter;
-
+pub type Tag = rustracing::tag::Tag;
 pub type Span = HSpan;
 
 /// A wrapper around a simple rustracing_jaeger::RtSpan, providing some
@@ -183,4 +187,41 @@ fn noop(name: String) -> HSpan {
 /// Dummy span, useful for tests that don't test tracing
 pub fn test_span(name: &str) -> HSpan {
     noop(name.into())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::{*, tracer_console::*, span_map::print_span_map};
+    use std::collections::HashMap;
+
+    #[test]
+    fn trace_test() {
+        // Creates a tracer
+        let mut tracer = ConsoleTracer::new();
+        {
+            // Starts "parent" span
+            let parent_span: HSpan = tracer.span("parent").start().into();
+            {
+                // Starts "child" span
+                let mut child_span = parent_span.child("child_span");
+                child_span.set_tag(|| Tag::new("id", "A"));
+                child_span.event("a log message");
+                std::thread::sleep(std::time::Duration::from_millis(10));
+                let mut child_b_span = parent_span.child("child_b_span");
+                child_b_span.set_tag(|| Tag::new("id", "B"));
+                let mut _grand_child_span = child_span.child("grand_child_span");
+                // Starts "follower" span
+                let mut _follower_span = child_span.follower("child_follower_span");
+            } // The "child" span dropped and will be sent to `span_rx`
+            let mut parent_follower_span = parent_span.follower("parent_follower_span");
+            std::thread::sleep(std::time::Duration::from_millis(10));
+            let mut _parent_follower_2_span = parent_follower_span.follower("parent_follower_2_span");
+        } // The "parent" span dropped and will be sent to `span_rx`
+
+        // Outputs finished spans to the standard output
+        let count = tracer.drain();
+        assert_eq!(7, count);
+        tracer.print();
+        println!("Debug output:\n {:?}", tracer);
+    }
 }
