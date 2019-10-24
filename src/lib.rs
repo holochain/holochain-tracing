@@ -1,8 +1,8 @@
 #![feature(rustc_private)]
 
 pub mod span_map;
-pub mod tracer_jaeger;
 pub mod tracer_console;
+pub mod tracer_jaeger;
 
 extern crate crossbeam_channel;
 extern crate rustracing;
@@ -191,7 +191,7 @@ pub fn test_span(name: &str) -> HSpan {
 
 #[cfg(test)]
 mod tests {
-    use super::{*, tracer_console::*, span_map::print_span_map};
+    use super::{span_map::print_span_map, tracer_console::*, *};
     use std::collections::HashMap;
 
     #[test]
@@ -215,7 +215,8 @@ mod tests {
             } // The "child" span dropped and will be sent to `span_rx`
             let mut parent_follower_span = parent_span.follower("parent_follower_span");
             std::thread::sleep(std::time::Duration::from_millis(10));
-            let mut _parent_follower_2_span = parent_follower_span.follower("parent_follower_2_span");
+            let mut _parent_follower_2_span =
+                parent_follower_span.follower("parent_follower_2_span");
         } // The "parent" span dropped and will be sent to `span_rx`
 
         // Outputs finished spans to the standard output

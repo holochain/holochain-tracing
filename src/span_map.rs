@@ -1,7 +1,6 @@
+use rustracing::span::{FinishedSpan as RtFinishedSpan, SpanReference::*};
 use rustracing_jaeger::span::SpanContextState;
-use rustracing::span::{SpanReference::*, FinishedSpan as RtFinishedSpan};
-use std::collections::{HashMap, BTreeMap};
-
+use std::collections::{BTreeMap, HashMap};
 
 pub type FinishedSpan = RtFinishedSpan<SpanContextState>;
 pub type SpanMap = std::collections::HashMap<u64, FinishedSpan>;
@@ -9,7 +8,8 @@ pub type SpanMap = std::collections::HashMap<u64, FinishedSpan>;
 /// Print a single span
 pub fn print_span(span_map: &SpanMap, span: &FinishedSpan) {
     let span_id = span.context().state().span_id();
-    let (span_depth, _span_offset) = get_span_position(span_map, span_id).expect("span not part of span_map");
+    let (span_depth, _span_offset) =
+        get_span_position(span_map, span_id).expect("span not part of span_map");
     let mut spacing = String::new();
     for _ in 0..span_depth {
         spacing.push_str("\t");
@@ -53,7 +53,8 @@ pub fn print_span_map(span_map: &SpanMap) {
     let mut children_map = HashMap::new();
     let mut root_tree = BTreeMap::new();
     for (span_id, span) in span_map {
-        let (span_depth, span_offset) = get_span_position(span_map, *span_id).expect("span not part of span_map");
+        let (span_depth, span_offset) =
+            get_span_position(span_map, *span_id).expect("span not part of span_map");
         if span_depth == 0 {
             root_tree.insert(span.start_time(), span_id);
             continue;
@@ -62,14 +63,14 @@ pub fn print_span_map(span_map: &SpanMap) {
             match span_ref {
                 ChildOf(parent) => {
                     let maybe_tree = children_map.remove(&parent.span_id());
-                    let mut tree = maybe_tree.unwrap_or( BTreeMap::new());
+                    let mut tree = maybe_tree.unwrap_or(BTreeMap::new());
                     tree.insert(span.start_time(), span_id);
                     //println!("Parent of {} has children: {:?}", span.operation_name(), tree);
                     children_map.insert(parent.span_id(), tree);
                 }
                 FollowsFrom(sibling) => {
                     let maybe_tree = sibling_map.remove(&sibling.span_id());
-                    let mut tree = maybe_tree.unwrap_or( BTreeMap::new());
+                    let mut tree = maybe_tree.unwrap_or(BTreeMap::new());
                     tree.insert(span_offset, span_id);
                     sibling_map.insert(sibling.span_id(), tree);
                 }
@@ -119,12 +120,16 @@ pub fn get_span_position(span_map: &SpanMap, span_id: u64) -> Option<(u32, u32)>
     for span_ref in span.references() {
         match span_ref {
             ChildOf(parent) => {
-                if let Some((parent_depth, _parent_offset)) = get_span_position(span_map, parent.span_id()) {
+                if let Some((parent_depth, _parent_offset)) =
+                    get_span_position(span_map, parent.span_id())
+                {
                     depth = parent_depth + 1;
                 }
             }
             FollowsFrom(sibling) => {
-                if let Some((sibling_depth, sibling_offset)) = get_span_position(span_map, sibling.span_id()) {
+                if let Some((sibling_depth, sibling_offset)) =
+                    get_span_position(span_map, sibling.span_id())
+                {
                     depth = sibling_depth;
                     offset = sibling_offset + 1;
                 }

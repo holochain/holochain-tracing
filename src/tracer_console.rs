@@ -1,4 +1,4 @@
-use crate::{Reporter, Tracer, span_map::*};
+use crate::{span_map::*, Reporter, Tracer};
 use rustracing::span::SpanReceiver;
 use rustracing_jaeger::span::SpanContextState;
 use std::{borrow::Cow, io::Cursor};
@@ -23,7 +23,11 @@ impl ConsoleTracer {
     pub fn new() -> Self {
         let (span_tx, span_rx) = crossbeam_channel::bounded(1000);
         let tracer = Tracer::with_sender(AllSampler, span_tx);
-        ConsoleTracer {inner: tracer, span_rx, span_map: HashMap::new()}
+        ConsoleTracer {
+            inner: tracer,
+            span_rx,
+            span_map: HashMap::new(),
+        }
     }
 
     // Delete all stored spans

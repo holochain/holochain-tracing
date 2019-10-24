@@ -6,20 +6,16 @@ extern crate rustracing;
 extern crate rustracing_jaeger;
 
 use crate::rustracing::carrier::{ExtractFromBinary, InjectToBinary};
-use rustracing::{
-    span::{StartSpanOptions, SpanReceiver, SpanReference::*, FinishedSpan as RtFinishedSpan}
+use rustracing::span::{
+    FinishedSpan as RtFinishedSpan, SpanReceiver, SpanReference::*, StartSpanOptions,
 };
-use rustracing_jaeger::{
-    span::SpanContextState,
-    reporter::JaegerCompactReporter,
-};
+use rustracing_jaeger::{reporter::JaegerCompactReporter, span::SpanContextState};
 use std::{borrow::Cow, io::Cursor};
 use std::{thread, time::Duration};
 
+use holochain_tracing::tracer_jaeger::new_jaeger_tracer;
 pub use rustracing::sampler::*;
 pub use rustracing_jaeger::{Result, Span as RtSpan, *};
-use holochain_tracing::tracer_jaeger::new_jaeger_tracer;
-
 
 #[test]
 fn report_test() {
