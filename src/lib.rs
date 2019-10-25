@@ -179,6 +179,10 @@ impl HSpanContext {
     }
 }
 
+pub fn null_tracer() -> Tracer {
+    Tracer::new(NullSampler).0
+}
+
 /// TODO: use lazy_static / thread_local singleton Tracer
 fn noop(name: String) -> HSpan {
     Tracer::new(NullSampler).0.span(name).start().into()
@@ -213,7 +217,7 @@ mod tests {
                 let mut _follower_span = child_span.follower("child_follower_span");
             } // The "child" span dropped and will be sent to `span_rx`
             let parent_follower_span = parent_span.follower("parent_follower_span");
-            std::thread::sleep(std::time::Duration::from_millis(10));
+            // std::thread::sleep(std::time::Duration::from_millis(10));
             let mut _parent_follower_2_span =
                 parent_follower_span.follower("parent_follower_2_span");
         } // The "parent" span dropped and will be sent to `span_rx`
@@ -221,7 +225,7 @@ mod tests {
         // Outputs finished spans to the standard output
         let count = tracer.drain();
         assert_eq!(7, count);
-        tracer.print();
+        tracer.print(false);
         println!("Debug output:\n {:?}", tracer);
     }
 }

@@ -43,7 +43,7 @@ impl ConsoleTracer {
     }
 
     // Print span_map to console
-    pub fn print(&self) {
-        print_span_map(&self.span_map);
+    pub fn print(&self, only_events: bool) {
+        print_span_map(&self.span_map, only_events);
     }
 }

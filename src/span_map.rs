@@ -5,23 +5,35 @@ use std::collections::{BTreeMap, HashMap};
 pub type FinishedSpan = RtFinishedSpan<SpanContextState>;
 pub type SpanMap = std::collections::HashMap<u64, FinishedSpan>;
 
-/// Print a single span
-pub fn print_span(span_map: &SpanMap, span: &FinishedSpan) {
-    let span_id = span.context().state().span_id();
-    let (span_depth, _span_offset) =
-        get_span_position(span_map, span_id).expect("span not part of span_map");
-    let mut spacing = String::new();
-    for _ in 0..span_depth {
-        spacing.push_str("\t");
-    }
-    let mut tags = String::new();
-    for tag in span.tags() {
-        tags.push_str(&format!("{{{} = {:?}}} ", tag.name(), tag.value()));
-    }
-    println!("{}[{}] {}", spacing, span.operation_name(), tags);
+pub fn print_span_events(span: &FinishedSpan) {
     for log in span.logs() {
         for field in log.fields() {
-            println!("{}!{}! {}", spacing, field.name(), field.value());
+            println!("{}", field.value());
+        }
+    }
+}
+
+/// Print a single span
+pub fn print_span(span_map: &SpanMap, span: &FinishedSpan, only_events: bool) {
+    if only_events {
+        print_span_events(span);
+    } else {
+        let span_id = span.context().state().span_id();
+        let (span_depth, _span_offset) =
+            get_span_position(span_map, span_id).expect("span not part of span_map");
+        let mut spacing = String::new();
+        for _ in 0..span_depth {
+            spacing.push_str("\t");
+        }
+        let mut tags = String::new();
+        for tag in span.tags() {
+            tags.push_str(&format!("{{{} = {:?}}} ", tag.name(), tag.value()));
+        }
+        println!("{}[{}] {}", spacing, span.operation_name(), tags);
+        for log in span.logs() {
+            for field in log.fields() {
+                println!("{}!{}! {}", spacing, field.name(), field.value());
+            }
         }
     }
 }
@@ -43,43 +55,56 @@ pub fn print_span_stack(span_map: &SpanMap, span_id: u64) {
             }
         }
     }
-    print_span(span_map, span);
+    print_span(span_map, span, false);
 }
 
 /// Print the span_map as a tree
-pub fn print_span_map(span_map: &SpanMap) {
+pub fn print_span_map(span_map: &SpanMap, only_events: bool) {
     // Create children & sibling map
     let mut sibling_map = HashMap::new();
     let mut children_map = HashMap::new();
-    let mut root_tree = BTreeMap::new();
+    let mut root_span_list = BTreeMap::new();
+    // For each span, browse span-references to fill children & sibling map
     for (span_id, span) in span_map {
+        // Handle root span case first
         let (span_depth, span_offset) =
             get_span_position(span_map, *span_id).expect("span not part of span_map");
-        if span_depth == 0 {
-            root_tree.insert(span.start_time(), span_id);
-            continue;
+        let is_root = span_depth == 0 && span_offset == 0;
+        if is_root {
+            let mut start_time = span.start_time();
+            while root_span_list.contains_key(&start_time) {
+                // TODO: Have a list sorted by time since epoch instead
+                start_time = start_time.checked_add(std::time::Duration::from_nanos(100)).unwrap();
+            }
+            root_span_list.insert(start_time, span_id);
         }
+        // Browse span-references
         for span_ref in span.references() {
             match span_ref {
                 ChildOf(parent) => {
-                    let maybe_tree = children_map.remove(&parent.span_id());
-                    let mut tree = maybe_tree.unwrap_or(BTreeMap::new());
-                    tree.insert(span.start_time(), span_id);
+                    let maybe_children_tree = children_map.remove(&parent.span_id());
+                    let mut children_tree = maybe_children_tree.unwrap_or(BTreeMap::new());
+                    let mut start_time = span.start_time();
+                    while children_tree.contains_key(&start_time) {
+                        // TODO: Have a list sorted by time since epoch instead
+                        start_time = start_time.checked_add(std::time::Duration::from_nanos(100)).unwrap();
+                    }
+                    children_tree.insert(start_time, span_id);
                     //println!("Parent of {} has children: {:?}", span.operation_name(), tree);
-                    children_map.insert(parent.span_id(), tree);
+                    children_map.insert(parent.span_id(), children_tree);
                 }
                 FollowsFrom(sibling) => {
                     let maybe_tree = sibling_map.remove(&sibling.span_id());
                     let mut tree = maybe_tree.unwrap_or(BTreeMap::new());
-                    tree.insert(span_offset, span_id);
+                        tree.insert(span_offset, span_id);
                     sibling_map.insert(sibling.span_id(), tree);
                 }
             }
         }
     }
-    // print tree
-    for (_start_time, span_id) in root_tree.iter() {
-        print_span_tree(&children_map, &sibling_map, span_map, **span_id);
+    // print span tree
+    for (_start_time, span_id) in root_span_list.iter() {
+        print_span_tree(&children_map, &sibling_map, span_map, **span_id, only_events);
     }
 }
 
@@ -88,22 +113,23 @@ fn print_span_tree(
     sibling_map: &HashMap<u64, BTreeMap<u32, &u64>>,
     span_map: &SpanMap,
     span_id: u64,
+    only_events: bool,
 ) {
     // print self
     let span = span_map.get(&span_id).expect("Span not found");
-    print_span(span_map, span);
+    print_span(span_map, span, only_events);
     // print children
     let maybe_children_tree = children_map.get(&span_id);
     if let Some(children_tree) = maybe_children_tree {
         for (_start_time, child_span_id) in children_tree.iter() {
-            print_span_tree(children_map, sibling_map, span_map, **child_span_id);
+            print_span_tree(children_map, sibling_map, span_map, **child_span_id, only_events);
         }
     }
     // print siblings
     let maybe_siblings_tree = sibling_map.get(&span_id);
     if let Some(sibling_tree) = maybe_siblings_tree {
         for (_sibling_offset, sibling_span_id) in sibling_tree.iter() {
-            print_span_tree(children_map, sibling_map, span_map, **sibling_span_id);
+            print_span_tree(children_map, sibling_map, span_map, **sibling_span_id, only_events);
         }
     }
 }
