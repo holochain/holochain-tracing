@@ -124,7 +124,13 @@ fn print_span_tree(
     if let Some(children_tree) = maybe_children_tree {
         for (_start_time, child_span_id_list) in children_tree.iter() {
             for child_span_id in child_span_id_list {
-                print_span_tree(children_map, sibling_map, span_map, *child_span_id, only_events);
+                print_span_tree(
+                    children_map,
+                    sibling_map,
+                    span_map,
+                    *child_span_id,
+                    only_events,
+                );
             }
         }
     }
@@ -132,7 +138,13 @@ fn print_span_tree(
     let maybe_siblings_tree = sibling_map.get(&span_id);
     if let Some(sibling_tree) = maybe_siblings_tree {
         for (_sibling_offset, sibling_span_id) in sibling_tree.iter() {
-            print_span_tree(children_map, sibling_map, span_map, **sibling_span_id, only_events);
+            print_span_tree(
+                children_map,
+                sibling_map,
+                span_map,
+                **sibling_span_id,
+                only_events,
+            );
         }
     }
 }
