@@ -2,9 +2,12 @@ use rustracing::span::{FinishedSpan as RtFinishedSpan, SpanReference::*};
 use rustracing_jaeger::span::SpanContextState;
 use std::collections::{BTreeMap, HashMap};
 
+/// Sugar as we are using rusttracing specifically with rustracing_jaeger
 pub type FinishedSpan = RtFinishedSpan<SpanContextState>;
+/// A HashMap of finished span. Key is span_id.
 pub type SpanMap = std::collections::HashMap<u64, FinishedSpan>;
 
+/// Print a span but only its logs
 pub fn print_span_events(span: &FinishedSpan) {
     for log in span.logs() {
         for field in log.fields() {
@@ -109,6 +112,7 @@ pub fn print_span_map(span_map: &SpanMap, only_events: bool) {
     }
 }
 
+/// Recursive tree walking
 fn print_span_tree(
     children_map: &HashMap<u64, BTreeMap<std::time::SystemTime, Vec<u64>>>,
     sibling_map: &HashMap<u64, BTreeMap<u32, &u64>>,

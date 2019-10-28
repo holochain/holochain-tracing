@@ -4,6 +4,8 @@ pub use rustracing::sampler::*;
 pub use rustracing_jaeger::{Result, Span as RtSpan, *};
 use std::collections::HashMap;
 
+/// A Tracer wrapper that stores all spans it receives in a map,
+/// with the intent to display all received spans in the console.
 #[derive(Debug, Shrinkwrap)]
 #[shrinkwrap(mutable)]
 #[shrinkwrap(unsafe_ignore_visibility)]
@@ -26,13 +28,14 @@ impl ConsoleTracer {
         }
     }
 
-    // Delete all stored spans
+    /// Delete all stored spans
     pub fn clear(&mut self) {
         let _ = self.drain();
         self.span_map.clear();
     }
 
-    // Drain recv spans and add to map
+    /// Drain `span_rx` and add to map
+    /// TODO: Could be done periodically in a separate thread
     pub fn drain(&mut self) -> u32 {
         let mut count = 0;
         while let Ok(span) = self.span_rx.try_recv() {
@@ -42,7 +45,7 @@ impl ConsoleTracer {
         count
     }
 
-    // Print span_map to console
+    /// Print span_map to console
     pub fn print(&self, only_events: bool) {
         print_span_map(&self.span_map, only_events);
     }

@@ -10,6 +10,7 @@ use holochain_tracing::tracer_jaeger::new_jaeger_tracer;
 pub use rustracing::sampler::*;
 pub use rustracing_jaeger::{Result, Span as RtSpan, *};
 
+/// For manually testing if we can see reports on a jaeger client
 #[test]
 fn report_test() {
     let tracer = new_jaeger_tracer("report_test_33");
