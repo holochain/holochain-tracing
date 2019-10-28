@@ -17,7 +17,7 @@ pub struct ConsoleTracer {
 }
 
 impl ConsoleTracer {
-    /// Create a Tracer that sends all spans to a jaeger reporter thread
+    /// Create a Tracer that self-consumes all spans and reports them in ASCII form
     pub fn new() -> Self {
         let (span_tx, span_rx) = crossbeam_channel::bounded(1000);
         let tracer = Tracer::with_sender(AllSampler, span_tx);
