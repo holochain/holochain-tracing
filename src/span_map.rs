@@ -1,8 +1,10 @@
+//! A HashMap of finished span. Used by ConsoleReporter.
+
 use rustracing::span::{FinishedSpan as RtFinishedSpan, SpanReference::*};
 use rustracing_jaeger::span::SpanContextState;
 use std::collections::{BTreeMap, HashMap};
 
-/// Sugar as we are using rusttracing specifically with rustracing_jaeger
+/// Sugar, as we are using rusttracing specifically with rustracing_jaeger
 pub type FinishedSpan = RtFinishedSpan<SpanContextState>;
 /// A HashMap of finished span. Key is span_id.
 pub type SpanMap = std::collections::HashMap<u64, FinishedSpan>;

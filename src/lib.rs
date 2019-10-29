@@ -179,7 +179,7 @@ impl HSpanContext {
     }
 }
 
-/// Tracer placeholder
+/// Tracer placeholder (use only as last resort)
 pub fn null_tracer() -> Tracer {
     Tracer::new(NullSampler).0
 }
@@ -196,12 +196,12 @@ pub fn test_span(name: &str) -> HSpan {
 
 #[cfg(test)]
 mod tests {
-    use super::{tracer_console::*, *};
+    use super::*;
 
     #[test]
     fn trace_test() {
         // Creates a tracer
-        let (mut tracer, mut reporter) = tracer_console::new_tracer_with_console_reporter();
+        let (tracer, mut reporter) = tracer_console::new_tracer_with_console_reporter();
         {
             // Starts "parent" span
             let parent_span: HSpan = tracer.span("parent").start().into();
