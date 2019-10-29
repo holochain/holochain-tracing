@@ -1,7 +1,6 @@
 use crate::{span_map::*, Tracer};
 
-pub use rustracing::sampler::*;
-pub use rustracing_jaeger::{Result, Span as RtSpan, *};
+pub use rustracing::sampler::AllSampler;
 use std::collections::HashMap;
 
 /// Create a Tracer and Reporter that reports all spans in ASCII form

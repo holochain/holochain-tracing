@@ -2,7 +2,7 @@ use crate::{Reporter, Tracer};
 use std::thread;
 
 pub use rustracing::{sampler::*, span::SpanReceiver};
-pub use rustracing_jaeger::{Span as RjSpan, span::SpanContextState as RjSpanContextState};
+pub use rustracing_jaeger::{span::SpanContextState as RjSpanContextState, Span as RjSpan};
 
 fn run_reporter_thread(service_name: &'static str, span_rx: SpanReceiver<RjSpanContextState>) {
     thread::spawn(move || {

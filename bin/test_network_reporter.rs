@@ -1,6 +1,6 @@
 use std::{thread, time::Duration};
 
-use holochain_tracing::{*, tracer_network::new_tracer_with_network_reporter};
+use holochain_tracing::{tracer_network::new_tracer_with_network_reporter, *};
 
 /// For manually testing if we can see reports on a jaeger client
 fn main() {
