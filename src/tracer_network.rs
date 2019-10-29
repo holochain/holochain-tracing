@@ -1,12 +1,10 @@
 use crate::{Reporter, Tracer};
-use rustracing::span::SpanReceiver;
-use rustracing_jaeger::span::SpanContextState;
 use std::thread;
 
-pub use rustracing::sampler::*;
-pub use rustracing_jaeger::{Result, Span as RtSpan, *};
+pub use rustracing::{sampler::*, span::SpanReceiver};
+pub use rustracing_jaeger::{Span as RjSpan, span::SpanContextState as RjSpanContextState};
 
-fn run_reporter_thread(service_name: &'static str, span_rx: SpanReceiver<SpanContextState>) {
+fn run_reporter_thread(service_name: &'static str, span_rx: SpanReceiver<RjSpanContextState>) {
     thread::spawn(move || {
         let reporter = Reporter::new(service_name).unwrap();
         for span in span_rx {
@@ -15,8 +13,8 @@ fn run_reporter_thread(service_name: &'static str, span_rx: SpanReceiver<SpanCon
     });
 }
 
-/// Create a Tracer that sends all spans to a jaeger reporter thread
-pub fn new_jaeger_tracer(service_name: &'static str) -> Tracer {
+/// Create a Tracer that sends all spans automatically to the default jaeger reporter
+pub fn new_tracer_with_network_reporter(service_name: &'static str) -> Tracer {
     let (span_tx, span_rx) = crossbeam_channel::bounded(50);
     run_reporter_thread(service_name, span_rx);
     let tracer = Tracer::with_sender(AllSampler, span_tx);

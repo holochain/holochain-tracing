@@ -11,6 +11,10 @@ readme = "README.md"
 documentation = "https://docs.rs/holochain_tracing"
 repository = "https://github.com/holochain/holochain-tracing"
 
+[[bin]]
+name = "jaeger-report-tester"
+path = "bin/test_threaded_reporter.rs"
+
 [dependencies]
 crossbeam-channel = "=0.3.8"
 rustracing = "=0.2.0"

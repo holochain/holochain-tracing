@@ -2,7 +2,7 @@
 
 pub mod span_map;
 pub mod tracer_console;
-pub mod tracer_jaeger;
+pub mod tracer_network;
 
 extern crate crossbeam_channel;
 extern crate rustracing;
@@ -16,7 +16,7 @@ use rustracing_jaeger::span::SpanContextState;
 use std::{borrow::Cow, io::Cursor};
 
 pub use rustracing::sampler::*;
-pub use rustracing_jaeger::{Result, Span as RtSpan, *};
+pub use rustracing_jaeger::{Result, Span as RjSpan, *};
 
 pub type SpanContext = rustracing_jaeger::span::SpanContext;
 pub type Tracer = rustracing_jaeger::Tracer;
@@ -30,10 +30,10 @@ pub type Span = HSpan;
 /// with simpler versions. To access the lower-level methods, use `.0`.
 #[derive(Debug, Shrinkwrap)]
 #[shrinkwrap(mutable)]
-pub struct HSpan(pub RtSpan);
+pub struct HSpan(pub RjSpan);
 
-impl From<RtSpan> for HSpan {
-    fn from(span: RtSpan) -> HSpan {
+impl From<RjSpan> for HSpan {
+    fn from(span: RjSpan) -> HSpan {
         HSpan(span)
     }
 }
@@ -60,9 +60,9 @@ impl HSpan {
         &'a self,
         operation_name: N,
         f: F,
-    ) -> RtSpan
+    ) -> RjSpan
     where
-        F: FnOnce(StartSpanOptions<'_, AllSampler, SpanContextState>) -> RtSpan,
+        F: FnOnce(StartSpanOptions<'_, AllSampler, SpanContextState>) -> RjSpan,
     {
         self.0.child(operation_name, f)
     }
@@ -72,9 +72,9 @@ impl HSpan {
         &'a self,
         operation_name: N,
         f: F,
-    ) -> RtSpan
+    ) -> RjSpan
     where
-        F: FnOnce(StartSpanOptions<'_, AllSampler, SpanContextState>) -> RtSpan,
+        F: FnOnce(StartSpanOptions<'_, AllSampler, SpanContextState>) -> RjSpan,
     {
         self.0.follower(operation_name, f)
     }
@@ -179,13 +179,14 @@ impl HSpanContext {
     }
 }
 
+/// Tracer placeholder
 pub fn null_tracer() -> Tracer {
     Tracer::new(NullSampler).0
 }
 
 /// TODO: use lazy_static / thread_local singleton Tracer
 fn noop(name: String) -> HSpan {
-    Tracer::new(NullSampler).0.span(name).start().into()
+    null_tracer().span(name).start().into()
 }
 
 /// Dummy span, useful for tests that don't test tracing

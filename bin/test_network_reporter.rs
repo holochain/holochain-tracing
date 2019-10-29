@@ -1,22 +1,13 @@
-use holochain_tracing::*;
-
-extern crate crossbeam_channel;
-extern crate rustracing;
-extern crate rustracing_jaeger;
-
 use std::{thread, time::Duration};
 
-use holochain_tracing::tracer_jaeger::new_jaeger_tracer;
-pub use rustracing::sampler::*;
-pub use rustracing_jaeger::{Result, Span as RtSpan, *};
+use holochain_tracing::{*, tracer_jaeger::new_tracer_with_network_reporter};
 
 /// For manually testing if we can see reports on a jaeger client
-#[test]
-fn report_test() {
-    let tracer = new_jaeger_tracer("report_test_33");
+fn main() {
+    let tracer = new_tracer_with_network_reporter("report_test");
     let parent_span: HSpan = tracer.span("parent").start().into();
     {
-        for i in 0..30 {
+        for i in 0..10 {
             thread::sleep(Duration::from_millis(100));
             // Starts "child" span
             let mut child_span = parent_span.child("child_span");
