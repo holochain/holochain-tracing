@@ -13,7 +13,7 @@ repository = "https://github.com/holochain/holochain-tracing"
 
 [[bin]]
 name = "jaeger-report-tester"
-path = "bin/test_threaded_reporter.rs"
+path = "bin/test_network_reporter.rs"
 
 [dependencies]
 crossbeam-channel = "=0.3.8"

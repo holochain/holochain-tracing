@@ -201,7 +201,7 @@ mod tests {
     #[test]
     fn trace_test() {
         // Creates a tracer
-        let mut tracer = ConsoleTracer::new();
+        let (mut tracer, mut reporter) = tracer_console::new_tracer_with_console_reporter();
         {
             // Starts "parent" span
             let parent_span: HSpan = tracer.span("parent").start().into();
@@ -224,9 +224,9 @@ mod tests {
         } // The "parent" span dropped and will be sent to `span_rx`
 
         // Outputs finished spans to the standard output
-        let count = tracer.drain();
+        let count = reporter.drain();
         assert_eq!(7, count);
-        tracer.print(false);
-        println!("Debug output:\n {:?}", tracer);
+        reporter.print(false);
+        println!("Debug output:\n {:?}", reporter);
     }
 }

@@ -4,25 +4,25 @@ pub use rustracing::sampler::*;
 pub use rustracing_jaeger::{Result, Span as RtSpan, *};
 use std::collections::HashMap;
 
-/// A Tracer wrapper that stores all spans it receives in a map,
-/// with the intent to display all received spans in the console.
-#[derive(Debug, Shrinkwrap)]
-#[shrinkwrap(mutable)]
-#[shrinkwrap(unsafe_ignore_visibility)]
-pub struct ConsoleTracer {
-    #[shrinkwrap(main_field)]
-    inner: Tracer,
+/// Create a Tracer and Reporter that reports all spans in ASCII form
+pub fn new_tracer_with_console_reporter() -> (Tracer, ConsoleReporter) {
+    let (span_tx, span_rx) = crossbeam_channel::bounded(1000);
+    let tracer = Tracer::with_sender(AllSampler, span_tx);
+    (tracer, ConsoleReporter::new(span_rx))
+}
+
+/// A Reporter that stores all spans it receives in a map,
+/// with the intent to display all received spans to the console.
+#[derive(Debug)]
+pub struct ConsoleReporter {
     span_rx: crossbeam_channel::Receiver<FinishedSpan>,
     span_map: SpanMap,
 }
 
-impl ConsoleTracer {
-    /// Create a Tracer that self-consumes all spans and reports them in ASCII form
-    pub fn new() -> Self {
-        let (span_tx, span_rx) = crossbeam_channel::bounded(1000);
-        let tracer = Tracer::with_sender(AllSampler, span_tx);
-        ConsoleTracer {
-            inner: tracer,
+impl ConsoleReporter {
+    /// Constructor
+    pub fn new(span_rx: crossbeam_channel::Receiver<FinishedSpan>) -> Self {
+        ConsoleReporter {
             span_rx,
             span_map: HashMap::new(),
         }
