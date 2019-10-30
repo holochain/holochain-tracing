@@ -83,7 +83,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 
 [[package]]
 name = "holochain_tracing"
-version = "0.0.2"
+version = "0.0.3"
 dependencies = [
  "crossbeam-channel 0.3.8 (registry+https://github.com/rust-lang/crates.io-index)",
  "rustracing 0.2.0 (registry+https://github.com/rust-lang/crates.io-index)",
