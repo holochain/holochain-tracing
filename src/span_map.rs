@@ -97,11 +97,13 @@ pub fn print_span_map(span_map: &SpanMap, only_events: bool) {
                     children_map.insert(parent.span_id(), children_tree);
                 }
                 FollowsFrom(sibling) => {
-                    let maybe_tree = sibling_map.remove(&sibling.span_id());
-                    let mut tree = maybe_tree.unwrap_or(BTreeMap::new());
-                    let maybe_previous = tree.insert(span_offset, span_id);
-                    assert!(maybe_previous.is_none());
-                    sibling_map.insert(sibling.span_id(), tree);
+                    let maybe_sibling_tree = sibling_map.remove(&sibling.span_id());
+                    let mut sibling_tree = maybe_sibling_tree.unwrap_or(BTreeMap::new());
+                    let maybe_entry = sibling_tree.get(&span_offset);
+                    let mut span_id_list = maybe_entry.unwrap_or(&Vec::new()).to_vec();
+                    span_id_list.push(*span_id);
+                    sibling_tree.insert(span_offset, span_id_list);
+                    sibling_map.insert(sibling.span_id(), sibling_tree);
                 }
             }
         }
@@ -117,7 +119,7 @@ pub fn print_span_map(span_map: &SpanMap, only_events: bool) {
 /// Recursive tree walking
 fn print_span_tree(
     children_map: &HashMap<u64, BTreeMap<std::time::SystemTime, Vec<u64>>>,
-    sibling_map: &HashMap<u64, BTreeMap<u32, &u64>>,
+    sibling_map: &HashMap<u64, BTreeMap<u32, Vec<u64>>>,
     span_map: &SpanMap,
     span_id: u64,
     only_events: bool,
@@ -143,14 +145,16 @@ fn print_span_tree(
     // print siblings
     let maybe_siblings_tree = sibling_map.get(&span_id);
     if let Some(sibling_tree) = maybe_siblings_tree {
-        for (_sibling_offset, sibling_span_id) in sibling_tree.iter() {
-            print_span_tree(
-                children_map,
-                sibling_map,
-                span_map,
-                **sibling_span_id,
-                only_events,
-            );
+        for (_sibling_offset, sibling_span_id_list) in sibling_tree.iter() {
+            for sibling_span_id in sibling_span_id_list {
+                print_span_tree(
+                    children_map,
+                    sibling_map,
+                    span_map,
+                    *sibling_span_id,
+                    only_events,
+                );
+            }
         }
     }
 }

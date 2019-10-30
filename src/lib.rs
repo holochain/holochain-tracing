@@ -218,14 +218,15 @@ mod tests {
                 let mut _follower_span = child_span.follower("child_follower_span");
             } // The "child" span dropped and will be sent to `span_rx`
             let parent_follower_span = parent_span.follower("parent_follower_span");
+            let parent_follower_b_span = parent_span.follower("parent_follower_b_span");
             // std::thread::sleep(std::time::Duration::from_millis(10));
-            let mut _parent_follower_2_span =
-                parent_follower_span.follower("parent_follower_2_span");
+            let mut _parent_follower_follower_span =
+                parent_follower_span.follower("parent_follower_follower_span");
         } // The "parent" span dropped and will be sent to `span_rx`
 
         // Outputs finished spans to the standard output
         let count = reporter.drain();
-        assert_eq!(7, count);
+        assert_eq!(8, count);
         reporter.print(false);
         println!("Debug output:\n {:?}", reporter);
     }
