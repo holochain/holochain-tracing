@@ -39,7 +39,6 @@ impl ConsoleReporter {
         let mut count = 0;
         while let Ok(span) = self.span_rx.try_recv() {
             count += 1;
-            //println!("\t{} = {:?}", span.context().state().span_id(), span);
             self.span_map.insert(span.context().state().span_id(), span);
         }
         count
