@@ -1,3 +1,7 @@
+pub mod span_map;
+pub mod tracer_console;
+pub mod tracer_network;
+
 extern crate crossbeam_channel;
 extern crate rustracing;
 extern crate rustracing_jaeger;
@@ -10,12 +14,12 @@ use rustracing_jaeger::span::SpanContextState;
 use std::{borrow::Cow, io::Cursor};
 
 pub use rustracing::sampler::*;
-pub use rustracing_jaeger::{Result, Span as RtSpan, *};
+pub use rustracing_jaeger::{Result, Span as RjSpan, *};
 
 pub type SpanContext = rustracing_jaeger::span::SpanContext;
 pub type Tracer = rustracing_jaeger::Tracer;
 pub type Reporter = rustracing_jaeger::reporter::JaegerCompactReporter;
-
+pub type Tag = rustracing::tag::Tag;
 pub type Span = HSpan;
 
 /// A wrapper around a simple rustracing_jaeger::RtSpan, providing some
@@ -24,10 +28,10 @@ pub type Span = HSpan;
 /// with simpler versions. To access the lower-level methods, use `.0`.
 #[derive(Debug, Shrinkwrap)]
 #[shrinkwrap(mutable)]
-pub struct HSpan(pub RtSpan);
+pub struct HSpan(pub RjSpan);
 
-impl From<RtSpan> for HSpan {
-    fn from(span: RtSpan) -> HSpan {
+impl From<RjSpan> for HSpan {
+    fn from(span: RjSpan) -> HSpan {
         HSpan(span)
     }
 }
@@ -54,9 +58,9 @@ impl HSpan {
         &'a self,
         operation_name: N,
         f: F,
-    ) -> RtSpan
+    ) -> RjSpan
     where
-        F: FnOnce(StartSpanOptions<'_, AllSampler, SpanContextState>) -> RtSpan,
+        F: FnOnce(StartSpanOptions<'_, AllSampler, SpanContextState>) -> RjSpan,
     {
         self.0.child(operation_name, f)
     }
@@ -66,9 +70,9 @@ impl HSpan {
         &'a self,
         operation_name: N,
         f: F,
-    ) -> RtSpan
+    ) -> RjSpan
     where
-        F: FnOnce(StartSpanOptions<'_, AllSampler, SpanContextState>) -> RtSpan,
+        F: FnOnce(StartSpanOptions<'_, AllSampler, SpanContextState>) -> RjSpan,
     {
         self.0.follower(operation_name, f)
     }
@@ -173,12 +177,55 @@ impl HSpanContext {
     }
 }
 
+/// Tracer placeholder (use only as last resort)
+pub fn null_tracer() -> Tracer {
+    Tracer::new(NullSampler).0
+}
+
 /// TODO: use lazy_static / thread_local singleton Tracer
 fn noop(name: String) -> HSpan {
-    Tracer::new(NullSampler).0.span(name).start().into()
+    null_tracer().span(name).start().into()
 }
 
 /// Dummy span, useful for tests that don't test tracing
 pub fn test_span(name: &str) -> HSpan {
     noop(name.into())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn trace_test() {
+        // Creates a tracer
+        let (tracer, mut reporter) = tracer_console::new_tracer_with_console_reporter();
+        {
+            // Starts "parent" span
+            let parent_span: HSpan = tracer.span("parent").start().into();
+            {
+                // Starts "child" span
+                let mut child_span = parent_span.child("child_span");
+                child_span.set_tag(|| Tag::new("id", "A"));
+                child_span.event("a log message");
+                std::thread::sleep(std::time::Duration::from_millis(10));
+                let mut child_b_span = parent_span.child("child_b_span");
+                child_b_span.set_tag(|| Tag::new("id", "B"));
+                let mut _grand_child_span = child_span.child("grand_child_span");
+                // Starts "follower" span
+                let mut _follower_span = child_span.follower("child_follower_span");
+            } // The "child" span dropped and will be sent to `span_rx`
+            let parent_follower_span = parent_span.follower("parent_follower_span");
+            let parent_follower_b_span = parent_span.follower("parent_follower_b_span");
+            // std::thread::sleep(std::time::Duration::from_millis(10));
+            let mut _parent_follower_follower_span =
+                parent_follower_span.follower("parent_follower_follower_span");
+        } // The "parent" span dropped and will be sent to `span_rx`
+
+        // Outputs finished spans to the standard output
+        let count = reporter.drain();
+        assert_eq!(8, count);
+        reporter.print(false);
+        println!("Debug output:\n {:?}", reporter);
+    }
 }
