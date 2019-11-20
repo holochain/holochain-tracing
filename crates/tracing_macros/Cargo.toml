@@ -1,0 +1,18 @@
+[package]
+name = "holochain_tracing_macros"
+version = "0.0.1"
+authors = ["Holochain Core Dev Team <devcore@holochain.org>"]
+edition = "2018"
+description = "abstraction for distributed tracing choices"
+keywords = ["holochain", "holo", "tracing"]
+categories = ["tracing"]
+license = "Apache-2.0"
+readme = "README.md"
+documentation = "https://docs.rs/holochain_tracing"
+repository = "https://github.com/holochain/holochain-tracing"
+
+[lib]
+proc-macro = true
+
+[dependencies]
+holochain_tracing = { path = "../tracing" }
