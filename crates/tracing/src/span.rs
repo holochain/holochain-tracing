@@ -180,6 +180,7 @@ pub fn test_span(name: &str) -> HSpan {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::{tracer_console, Tag};
 
     #[test]
     fn trace_test() {
@@ -201,7 +202,7 @@ mod tests {
                 let mut _follower_span = child_span.follower("child_follower_span");
             } // The "child" span dropped and will be sent to `span_rx`
             let parent_follower_span = parent_span.follower("parent_follower_span");
-            let parent_follower_b_span = parent_span.follower("parent_follower_b_span");
+            let _parent_follower_b_span = parent_span.follower("parent_follower_b_span");
             // std::thread::sleep(std::time::Duration::from_millis(10));
             let mut _parent_follower_follower_span =
                 parent_follower_span.follower("parent_follower_follower_span");

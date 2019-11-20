@@ -1,0 +1,6 @@
+[workspace]
+
+members = [
+  "crates/tracing",
+  "crates/tracing_macros",
+]

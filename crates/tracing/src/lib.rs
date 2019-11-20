@@ -1,6 +1,5 @@
 #![feature(rustc_private)]
 
-extern crate crossbeam_channel;
 extern crate rustracing;
 extern crate rustracing_jaeger;
 #[macro_use]
@@ -8,6 +7,7 @@ extern crate shrinkwraprs;
 
 mod span;
 pub mod span_map;
+pub mod stack;
 pub mod tracer_console;
 pub mod tracer_network;
 
