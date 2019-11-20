@@ -24,7 +24,7 @@ pub type Reporter = rustracing_jaeger::reporter::JaegerCompactReporter;
 pub type Tag = rustracing::tag::Tag;
 pub type Span = HSpan;
 
-/// A wrapper around a simple rustracing_jaeger::RtSpan, providing some
+/// A wrapper around a simple rustracing_jaeger::RjSpan, providing some
 /// convenience functions.
 /// It overshadows the lower-level `child` and `follower` methods
 /// with simpler versions. To access the lower-level methods, use `.0`.
@@ -94,10 +94,10 @@ impl HSpan {
         SpanWrap::new(data, self)
     }
 
-    /// e.g. for times when a function requires a RtSpan but we don't desire to actually
+    /// e.g. for times when a function requires a RjSpan but we don't desire to actually
     /// instrument that function call.
     pub fn noop() -> Self {
-        noop("no-op, intentionally disconnected RtSpan".into())
+        noop("no-op, intentionally disconnected RjSpan".into())
     }
 
     /// Useful for retrofitting existing codebases with traces. This is a noop,
@@ -116,14 +116,14 @@ impl HSpan {
     }
 }
 
-/// SpanWrap is a simple way to couple some data along with a struct It is
+/// SpanWrap is a simple way to couple some data along with a struct. It is
 /// common to send some data on a channel which will be used as arguments
 /// to a function on the receiving side, where we also want to continue the
 /// trace on the receiving side. This struct helps keep that data together
 /// with minimal boilerplate.
 ///
 /// The use of shrinkwrap allows the entire struct to be used as if it were
-/// a bare T (in most situations), but the RtSpan can also be extracted.
+/// a bare T (in most situations), but the RjSpan can also be extracted.
 #[derive(Shrinkwrap)]
 #[shrinkwrap(mutable)]
 pub struct SpanWrap<T> {
@@ -148,7 +148,7 @@ pub type EncodedSpanContext = Vec<u8>;
 pub struct HSpanContext(pub SpanContext);
 
 impl HSpanContext {
-    /// Create a follower RtSpan from this SpanContext
+    /// Create a follower RjSpan from this SpanContext
     /// NB: there is intentionally no method to create a child span from a context,
     /// since it's assumed that all inter-process points of a trace are async and
     /// the parent span will have ended before this one does
