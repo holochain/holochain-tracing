@@ -1,5 +1,6 @@
 
 use std::fmt;
+use std::mem;
 use std::cell::RefCell;
 // use syn::{self, ItemFn};
 
@@ -62,16 +63,13 @@ impl fmt::Display for SpanStackError {
     }
 }
 
-pub fn set_root_span(span: Span) {
+pub fn start_thread_trace(span: Span) {
     SPANSTACK.with(|stack| {
         let mut stack = stack.borrow_mut();
+        if !stack.is_empty() {
+            warn!("Called start_thread_trace, but there were still {} spans left on the stack", stack.len());
+        }
         *stack = SpanStack::new(span);
-        // if !stack.is_empty() {
-        //     Err(SpanStackError::StackNotEmpty)
-        // } else {
-        //     stack.push(span);
-        //     Ok(())
-        // }
     })
 }
 
@@ -114,7 +112,7 @@ mod tests {
     #[test]
     fn test_nested() {
         SPANSTACK.with(|stack| assert_eq!(stack.borrow().len(), 0));
-        set_root_span(Span::noop());
+        start_thread_trace(Span::noop());
         SPANSTACK.with(|stack| assert_eq!(stack.borrow().len(), 1));
         let inner = nested(|s| { println!("{:?}", s); s.child("1") }, || {
             let two = SPANSTACK.with(|stack| stack.borrow().len());

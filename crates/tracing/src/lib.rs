@@ -4,6 +4,8 @@ extern crate rustracing;
 extern crate rustracing_jaeger;
 #[macro_use]
 extern crate shrinkwraprs;
+#[macro_use] 
+extern crate log;
 
 mod span;
 pub mod span_map;

@@ -28,7 +28,7 @@ fn oh_hi() -> u32 {
 fn decoration() {
     let (tx, rx) = cc::unbounded();
     let tracer = ht::Tracer::with_sender(ht::AllSampler, tx);
-    ht::stack::set_root_span(tracer.span("root").start().into());
+    start_thread_trace!(tracer.span("root").start().into());
     let x = a(0);
     assert_eq!(x, 20);
     let spans: Vec<_> = rx.iter().take(3).map(|s| s.operation_name().to_owned()).collect();
