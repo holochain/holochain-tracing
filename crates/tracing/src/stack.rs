@@ -1,6 +1,5 @@
 
 use std::fmt;
-use std::mem;
 use std::cell::RefCell;
 // use syn::{self, ItemFn};
 
@@ -9,8 +8,6 @@ use crate::Span;
 thread_local! {
     static SPANSTACK: RefCell<SpanStack> = RefCell::new(SpanStack::default());
 }
-
-type PushFn = FnOnce(&Span) -> Span;
 
 #[derive(Default)]
 struct SpanStack(Vec<Span>);
@@ -27,7 +24,8 @@ impl SpanStack {
 
     fn push<F: FnOnce(&Span) -> Span>(&mut self, f: F) {
         if let Some(top) = self.0.last() {
-            self.0.push(f(top));
+            let successor = f(top);
+            self.0.push(successor);
         }
     }
 
@@ -35,7 +33,7 @@ impl SpanStack {
         self.0.pop()
     }
 
-    fn top(&mut self) -> Option<&Span>{
+    fn _top(&mut self) -> Option<&Span>{
         self.0.last()
     }
 

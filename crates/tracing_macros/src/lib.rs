@@ -5,27 +5,63 @@ extern crate proc_macro;
 extern crate syn;
 extern crate quote;
 
+use std::collections::HashSet;
 use proc_macro::TokenStream;
+use syn::{ItemFn, ItemMod, Attribute};
 use quote::quote;
-use quote::ToTokens;
-use std::mem;
+// use quote::ToTokens;
 
 #[proc_macro_attribute]
-pub fn traced(_attr: TokenStream, item: TokenStream) -> TokenStream {
-    let mut func: syn::ItemFn =
-        syn::parse(item.clone().into()).expect("#[traced] can only be used on a function");
-    let func_name = func.sig.ident.to_string();
-    let block = func.block;
-    let new_tokens: TokenStream = TokenStream::from(quote! {
-        {
-            ::holochain_tracing::stack::nested(
-                |span| span.child(#func_name),
-                || #block
-            )
+pub fn autotrace(_attr: TokenStream, code: TokenStream) -> TokenStream {
+    let mut at = Autotrace::default();
+    let output = syn::fold::fold_item(&mut at, syn::parse(code).unwrap());
+    TokenStream::from(quote!{#output})
+}
+
+#[proc_macro_attribute]
+pub fn no_autotrace(_attr: TokenStream, code: TokenStream) -> TokenStream {
+    code
+}
+
+#[derive(Default)]
+struct Autotrace {}
+
+impl Autotrace {
+
+    fn is_no_autotrace(&self, i: &[Attribute]) -> bool {
+        i.iter().any(|ref a| if a.path.segments.len() == 1 {
+            let ident = &a.path.segments.iter().next().unwrap().ident;
+            ident == "autotrace" || ident == "no_autotrace"
+        } else {
+            false
+        })
+    }
+
+}
+
+impl syn::fold::Fold for Autotrace {
+    // fn fold_item_mod(&mut self, i: ItemMod) -> ItemMod {
+    //     i
+    // }
+
+    fn fold_item_fn(&mut self, func: ItemFn) -> ItemFn {
+        if self.is_no_autotrace(&func.attrs) {
+            return func
         }
-    });
-    func.block = syn::parse(new_tokens).expect("Couldn't parse new tokens");
-    func.into_token_stream().into()
+        let mut func = func;
+        let func_name = func.sig.ident.to_string();
+        let block = func.block;
+        let new_tokens: TokenStream = TokenStream::from(quote! {
+            {
+                ::holochain_tracing::stack::nested(
+                    |span| span.child(#func_name),
+                    || #block
+                )
+            }
+        });
+        func.block = syn::parse(new_tokens).expect("Couldn't parse new tokens");
+        func
+    }
 }
 
 
