@@ -68,8 +68,12 @@ fn module_decoration() {
     assert_eq!(spans, vec!["c", "b", "a"]);
 }
 
-// #[test]
-// fn function_style() {
-//     let x = trace_with_span!(span, oh_hi());
-//     assert_eq!(x, 2);
-// }
+#[test]
+fn get_thread_span() {
+    let (tx, rx) = cc::unbounded();
+    let tracer = ht::Tracer::with_sender(ht::AllSampler, tx);
+    start_thread_trace!(tracer.span("root").start().into());
+
+    let x = thread_span!();
+    assert_eq!(x, 2);
+}

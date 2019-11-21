@@ -29,17 +29,28 @@ impl SpanStack {
         }
     }
 
-    fn pop(&mut self) -> Option<Span>{
+    fn pop(&mut self) -> Option<Span> {
         self.0.pop()
     }
 
-    fn _top(&mut self) -> Option<&Span>{
+    fn top(&mut self) -> Option<&Span> {
         self.0.last()
     }
 
-    fn is_empty(&self) -> bool {
+    fn is_empty(&mut self) -> bool {
         self.0.is_empty()
     }
+
+// pub fn with_thread_span<F, T>(f: F) -> T 
+// where F: FnOnce(&Span) -> T {
+//     SPANSTACK.with(|stack| {
+//         let span = stack.borrow().as_ref().top().unwrap_or_else(|| {
+//             warn!("Using with_span, but no span is active for this thread.");
+//             Span::noop()
+//         });
+//         f(span)
+//     })
+// }
 }
 
 // impl syn::fold::Fold for SpanStack {
@@ -71,11 +82,25 @@ pub fn start_thread_trace(span: Span) {
     })
 }
 
-// pub fn current_span() -> &Span {
+// pub fn thread_span() -> &'static Span {
 //     SPANSTACK.with(|stack| {
-//         stack.borrow().as_ref().top()
+//         stack.borrow().top().unwrap_or_else(|| {
+//             warn!("Using with_span, but no span is active for this thread.");
+//             &Span::noop()
+//         })
 //     })
 // }
+
+pub fn with_thread_span<F, T>(f: F) -> T 
+where F: FnOnce(&Span) -> T {
+    SPANSTACK.with(|stack| {
+        let span = stack.borrow().top().unwrap_or_else(|| {
+            warn!("Using with_span, but no span is active for this thread.");
+            &Span::noop()
+        });
+        f(span)
+    })
+}
 
 pub fn nested<F, G, T>(f: F, g: G) -> T
 where F: FnOnce(&Span) -> Span, G: FnOnce() -> T {

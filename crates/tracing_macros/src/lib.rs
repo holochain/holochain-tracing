@@ -73,6 +73,14 @@ pub fn start_thread_trace(input: TokenStream) -> TokenStream {
     })
 }
 
+#[proc_macro]
+pub fn thread_span(input: TokenStream) -> TokenStream {
+    println!("thread_span input = {:?}", input);
+    TokenStream::from(quote! {
+        ::holochain_tracing::stack::thread_span()
+    })
+}
+
 // #[proc_macro]
 // pub fn trace_with_span(input: TokenStream) -> TokenStream {
     
