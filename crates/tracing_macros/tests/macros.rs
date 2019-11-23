@@ -37,6 +37,28 @@ mod mods {
     }
 }
 
+#[autotrace]
+mod methods {
+    use holochain_tracing_macros::*;
+
+    pub struct S {}
+
+    impl S {
+        pub fn g(&self, x: u32) -> u32 {
+            self.h(x) * 10
+        }
+
+        #[autotrace]
+        pub fn h(&self, x: u32) -> u32 {
+            self.i(x) * 2
+        }
+
+        pub fn i(&self, x: u32) -> u32 {
+            x + 1
+        }
+    }
+}
+
 #[test]
 fn function_attr() {
     let (tx, rx) = cc::unbounded();
@@ -73,4 +95,26 @@ fn module_attr() {
         .map(|s| s.operation_name().to_owned())
         .collect();
     assert_eq!(names, vec!["f", "e", "d", "root"]);
+}
+
+#[test]
+fn method_attr() {
+    let (tx, rx) = cc::unbounded();
+    let tracer = ht::Tracer::with_sender(ht::AllSampler, tx);
+    let x = {
+        let root_span = tracer.span("root").start().into();
+        ht::start_thread_trace(root_span, || {
+            let s = methods::S {};
+            s.g(0)
+        })
+    };
+    assert_eq!(x, 20);
+    let num = rx.len();
+    assert_eq!(num, 4);
+    let names: Vec<_> = rx
+        .iter()
+        .take(num)
+        .map(|s| s.operation_name().to_owned())
+        .collect();
+    assert_eq!(names, vec!["i", "h", "g", "root"]);
 }
