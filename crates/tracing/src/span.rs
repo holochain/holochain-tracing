@@ -212,6 +212,5 @@ mod tests {
         let count = reporter.drain();
         assert_eq!(8, count);
         reporter.print(false);
-        println!("Debug output:\n {:?}", reporter);
     }
 }

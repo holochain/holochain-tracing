@@ -6,24 +6,20 @@ extern crate rustracing_jaeger;
 extern crate lazy_static;
 #[macro_use]
 extern crate shrinkwraprs;
-#[macro_use] 
+#[macro_use]
 extern crate log;
 
 mod span;
 pub mod span_map;
-pub mod stack;
+mod stack;
 pub mod tracer_console;
 pub mod tracer_network;
 
-pub use rustracing::{tag::Tag, sampler::*};
-pub use rustracing_jaeger::{Tracer, reporter::JaegerCompactReporter as Reporter};
+pub use rustracing::{sampler::*, tag::Tag};
+pub use rustracing_jaeger::{reporter::JaegerCompactReporter as Reporter, Tracer};
+pub use stack::{nested, start_thread_trace, with_thread_span};
 
 pub use crate::span::{
-    HSpanContext as SpanContext,
-    HSpan as Span,
+    noop, null_tracer, test_span, EncodedSpanContext, HSpan as Span, HSpanContext as SpanContext,
     SpanWrap,
-    noop,
-    null_tracer,
-    test_span,
-    EncodedSpanContext
 };
