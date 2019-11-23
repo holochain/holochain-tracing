@@ -9,6 +9,10 @@ thread_local! {
     static SPANSTACK: RefCell<SpanStack> = RefCell::new(SpanStack::default());
 }
 
+lazy_static! {
+    static ref NOOP_SPAN: Span = Span::noop();
+}
+
 #[derive(Default)]
 struct SpanStack(Vec<Span>);
 
@@ -22,7 +26,13 @@ impl SpanStack {
         self.0.len()
     }
 
-    fn push<F: FnOnce(&Span) -> Span>(&mut self, f: F) {
+    fn push_span(&mut self, span: Span) {
+        if let Some(top) = self.0.last() {
+            self.0.push(span);
+        }
+    }
+
+    fn push_fn<F: FnOnce(&Span) -> Span>(&mut self, f: F) {
         if let Some(top) = self.0.last() {
             let successor = f(top);
             self.0.push(successor);
@@ -33,11 +43,11 @@ impl SpanStack {
         self.0.pop()
     }
 
-    fn top(&mut self) -> Option<&Span> {
+    fn top(&self) -> Option<&Span> {
         self.0.last()
     }
 
-    fn is_empty(&mut self) -> bool {
+    fn is_empty(&self) -> bool {
         self.0.is_empty()
     }
 
@@ -82,21 +92,13 @@ pub fn start_thread_trace(span: Span) {
     })
 }
 
-// pub fn thread_span() -> &'static Span {
-//     SPANSTACK.with(|stack| {
-//         stack.borrow().top().unwrap_or_else(|| {
-//             warn!("Using with_span, but no span is active for this thread.");
-//             &Span::noop()
-//         })
-//     })
-// }
-
 pub fn with_thread_span<F, T>(f: F) -> T 
 where F: FnOnce(&Span) -> T {
     SPANSTACK.with(|stack| {
-        let span = stack.borrow().top().unwrap_or_else(|| {
+        let stack = stack.borrow();
+        let span = stack.top().unwrap_or_else(|| {
             warn!("Using with_span, but no span is active for this thread.");
-            &Span::noop()
+            &NOOP_SPAN
         });
         f(span)
     })
@@ -105,7 +107,19 @@ where F: FnOnce(&Span) -> T {
 pub fn nested<F, G, T>(f: F, g: G) -> T
 where F: FnOnce(&Span) -> Span, G: FnOnce() -> T {
     SPANSTACK.with(|stack| {
-        stack.borrow_mut().push(f);
+        stack.borrow_mut().push_fn(f);
+    });
+    let result = g();
+    SPANSTACK.with(|stack| {
+        let _ = stack.borrow_mut().pop();
+    });
+    result
+}
+
+pub fn nested_root<G, T>(span: Span, g: G) -> T
+where G: FnOnce() -> T {
+    SPANSTACK.with(|stack| {
+        stack.borrow_mut().push_span(span);
     });
     let result = g();
     SPANSTACK.with(|stack| {

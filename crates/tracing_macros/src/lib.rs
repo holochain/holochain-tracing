@@ -5,9 +5,8 @@ extern crate proc_macro;
 extern crate syn;
 extern crate quote;
 
-use std::collections::HashSet;
 use proc_macro::TokenStream;
-use syn::{ItemFn, ItemMod, Attribute};
+use syn::{ItemFn, Attribute};
 use quote::quote;
 // use quote::ToTokens;
 
@@ -40,9 +39,9 @@ impl Autotrace {
 }
 
 impl syn::fold::Fold for Autotrace {
-    // fn fold_item_mod(&mut self, i: ItemMod) -> ItemMod {
-    //     i
-    // }
+    fn fold_item_mod(&mut self, i: syn::ItemMod) -> syn::ItemMod {
+        i
+    }
 
     fn fold_item_fn(&mut self, func: ItemFn) -> ItemFn {
         if self.is_no_autotrace(&func.attrs) {
@@ -74,28 +73,28 @@ pub fn start_thread_trace(input: TokenStream) -> TokenStream {
 }
 
 #[proc_macro]
-pub fn thread_span(input: TokenStream) -> TokenStream {
-    println!("thread_span input = {:?}", input);
+pub fn with_thread_span(input: TokenStream) -> TokenStream {
+    let expr: syn::Expr = syn::parse(input).unwrap();
     TokenStream::from(quote! {
-        ::holochain_tracing::stack::thread_span()
+        ::holochain_tracing::stack::with_thread_span(|span| {
+            #expr
+        })
     })
 }
 
-// #[proc_macro]
-// pub fn trace_with_span(input: TokenStream) -> TokenStream {
+#[proc_macro]
+pub fn trace_with_span(input: TokenStream) -> TokenStream {
     
-//     let mut i = input.into_iter();
-//     let span_expr: syn::Expr = syn::parse(i.next().unwrap().into()).unwrap();
-//     let delim_token = i.next().unwrap().into();
-//     let _: syn::Token![,] = syn::parse(delim_token).unwrap();
-//     let main_expr: syn::Expr = syn::parse(i.collect::<TokenStream>()).unwrap();
-//     println!("{:#?} + {:#?}", span_expr, main_expr);
-//     TokenStream::from(quote! {
-//         {
-//             let span = #span_expr;
-//             ::holochain_tracing::stack::start_thread_trace(span);
-//             let result = #main_expr;
-//             result
-//         }
-//     })
-// }
+    let mut i = input.into_iter();
+    let span_expr: syn::Expr = syn::parse(i.next().unwrap().into()).unwrap();
+    let delim_token = i.next().unwrap().into();
+    let _: syn::Token![,] = syn::parse(delim_token).unwrap();
+    let main_expr: syn::Expr = syn::parse(i.collect::<TokenStream>()).unwrap();
+    // println!("{:#?} + {:#?}", span_expr, main_expr);
+    TokenStream::from(quote! {
+        {
+            let span = #span_expr;
+            ::holochain_tracing::stack::nested_root(span, || #main_expr);
+        }
+    })
+}
