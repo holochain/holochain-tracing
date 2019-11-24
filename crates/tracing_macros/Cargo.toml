@@ -19,5 +19,6 @@ holochain_tracing = { path = "../tracing" }
 syn = { version = "1.0.8", features = ["full", "fold"] }
 quote = "1.0.2"
 crossbeam-channel = "=0.3.8"
+log = "0.4.8"
 
 [dev-dependencies]
