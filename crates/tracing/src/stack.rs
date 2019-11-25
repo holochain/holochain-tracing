@@ -36,8 +36,8 @@ impl SpanStack {
     //     }
     // }
 
-    fn pop(&mut self) -> Option<Rc<Span>> {
-        self.0.pop()
+    fn pop(&mut self) {
+        let _ = self.0.pop();
     }
 
     fn top(&self) -> Option<&Span> {
@@ -51,16 +51,18 @@ impl SpanStack {
 
 
 pub struct SpanStackGuard {
-    _span: Rc<Span>
+    _spans: Vec<Rc<Span>>
 }
 
 impl SpanStackGuard {
     pub fn new(span: Span) -> Self {
         let span = Rc::new(span);
-        SPANSTACK.with(|stack| {
-            stack.borrow_mut().push_span(span.clone());
+        let _spans = SPANSTACK.with(|stack| {
+            let mut stack = stack.borrow_mut();
+            stack.push_span(span.clone());
+            stack.0.clone()
         });
-        Self { _span: span }
+        Self { _spans }
     }
 }
 
@@ -93,22 +95,22 @@ mod tests {
 
     #[test]
     fn test_push() {
-        SPANSTACK.with(|stack| assert_eq!(stack.borrow().len(), 0));
+        SPANSTACK.with(|stack| assert_eq!(stack.borrow().0.len(), 0));
         {
-            let g0 = push_root_span(Span::noop());
-            SPANSTACK.with(|stack| assert_eq!(stack.borrow().len(), 1));
+            let _g0 = push_root_span(Span::noop());
+            SPANSTACK.with(|stack| assert_eq!(stack.borrow().0.len(), 1));
             {
-                let g1 = push_span_with(|s| s.child("1"));
-                SPANSTACK.with(|stack| assert_eq!(stack.borrow().len(), 2));
+                let _g1 = push_span_with(|s| s.child("1"));
+                SPANSTACK.with(|stack| assert_eq!(stack.borrow().0.len(), 2));
                 {
-                    let g2 = push_span_with(|s| s.child("2"));
-                    SPANSTACK.with(|stack| assert_eq!(stack.borrow().len(), 3));
+                    let _g2 = push_span_with(|s| s.child("2"));
+                    SPANSTACK.with(|stack| assert_eq!(stack.borrow().0.len(), 3));
                 }
-                SPANSTACK.with(|stack| assert_eq!(stack.borrow().len(), 2));
+                SPANSTACK.with(|stack| assert_eq!(stack.borrow().0.len(), 2));
             }
-            SPANSTACK.with(|stack| assert_eq!(stack.borrow().len(), 1));
+            SPANSTACK.with(|stack| assert_eq!(stack.borrow().0.len(), 1));
         }
-        SPANSTACK.with(|stack| assert_eq!(stack.borrow().len(), 0));
+        SPANSTACK.with(|stack| assert_eq!(stack.borrow().0.len(), 0));
     }
 
 }
