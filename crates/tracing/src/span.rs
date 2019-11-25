@@ -3,7 +3,7 @@ use crate::rustracing::carrier::{ExtractFromBinary, InjectToBinary};
 use rustracing::{span::StartSpanOptions};
 use rustracing::{sampler::*};
 use rustracing_jaeger::{Tracer, span::{SpanContext, SpanContextState}};
-use std::{borrow::Cow, io::Cursor};
+use std::{fmt, borrow::Cow, io::Cursor};
 use rustracing_jaeger::{Result, Span as RjSpan};
 
 
@@ -120,6 +120,21 @@ impl<T> SpanWrap<T> {
         Self { data, span }
     }
 }
+
+impl<T: fmt::Debug> fmt::Debug for SpanWrap<T> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "SpanWrap({:?}, {:?})", self.data, self.span)
+    }
+}
+
+// impl<T: Clone> Clone for SpanWrap<T> {
+//     fn clone(&self) -> SpanWrap<T> {
+//         SpanWrap {
+//             data: self.data.clone(),
+//             span: self.span.clone(),
+//         }
+//     }
+// }
 
 /// Binary representation is exactly 37 bytes, so ideally
 /// we would use a [u8; 37], but this is easier...

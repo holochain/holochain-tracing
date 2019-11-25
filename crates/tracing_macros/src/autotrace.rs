@@ -2,7 +2,7 @@ use proc_macro::TokenStream;
 use quote::quote;
 use syn::{Attribute, ImplItemMethod, ItemFn};
 
-const DEBUG_OUTPUT: bool = true;
+const DEBUG_OUTPUT: bool = false;
 
 #[derive(Default)]
 pub(crate) struct Autotrace {}
@@ -21,16 +21,26 @@ impl Autotrace {
 }
 
 impl Autotrace {
-    fn rewrite_block(name: String, block: syn::Block) -> syn::Block {
-        let new_tokens: TokenStream = TokenStream::from(quote! {
-            {
-                println!("!autotrace! pushing span for {}", #name);
-                ::holochain_tracing::nested(
-                    |span| span.child(#name),
-                    || #block
-                )
-            }
-        });
+    fn rewrite_block(name: String, block: syn::Block, is_async: bool) -> syn::Block {
+        let new_tokens: TokenStream = if is_async {            
+            TokenStream::from(quote! {
+                {
+                    ::holochain_tracing::nested_async(
+                        |span| span.child(#name),
+                        async move || #block
+                    ).await
+                }
+            })
+        } else {
+            TokenStream::from(quote! {
+                {
+                    ::holochain_tracing::nested(
+                        |span| span.child(#name),
+                        || #block
+                    )
+                }
+            })
+        };
         syn::parse(new_tokens).expect("Couldn't parse new tokens")
     }
 }
@@ -75,12 +85,13 @@ impl syn::fold::Fold for Autotrace {
         if i.sig.constness.is_some() || self.is_no_autotrace(&i.attrs) {
             return i;
         }
-        let mut i = i;
         let func_name = i.sig.ident.to_string();
+        let is_async = i.sig.asyncness.is_some();
+        let mut i = i;
         if DEBUG_OUTPUT {
             println!("#autotrace# fold fn: {}", i.sig.ident.to_string());
         }
-        i.block = Box::new(Autotrace::rewrite_block(func_name, *i.block));
+        i.block = Box::new(Autotrace::rewrite_block(func_name, *i.block, is_async));
         i
     }
 
@@ -88,12 +99,13 @@ impl syn::fold::Fold for Autotrace {
         if i.sig.constness.is_some() || self.is_no_autotrace(&i.attrs) {
             return i;
         }
-        let mut method = i;
-        let method_name = method.sig.ident.to_string();
+        let method_name = i.sig.ident.to_string();
+        let is_async = i.sig.asyncness.is_some();
+        let mut i = i;
         if DEBUG_OUTPUT {
-            println!("#autotrace# fold method: {}", method.sig.ident.to_string());
+            println!("#autotrace# fold method: {}", i.sig.ident.to_string());
         }
-        method.block = Autotrace::rewrite_block(method_name, method.block);
-        method
+        i.block = Autotrace::rewrite_block(method_name, i.block, is_async);
+        i
     }
 }

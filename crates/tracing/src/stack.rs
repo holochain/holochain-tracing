@@ -1,5 +1,6 @@
 
 // use std::fmt;
+use core::future::Future;
 use std::cell::RefCell;
 // use syn::{self, ItemFn};
 
@@ -74,17 +75,17 @@ where F: FnOnce(&Span) -> T {
     })
 }
 
-// pub fn new_span<F>(f: F) -> Span
-// where F: FnOnce(&Span) -> Span {
-//     SPANSTACK.with(|stack| {
-//         let stack = stack.borrow();
-//         let span = stack.top().unwrap_or_else(|| {
-//             warn!("Using with_thread_span, but no span is active for this thread.");
-//             &NOOP_SPAN
-//         });
-//         f(span)
-//     })
-// }
+pub fn new_span<F>(f: F) -> Span
+where F: FnOnce(&Span) -> Span {
+    SPANSTACK.with(|stack| {
+        let stack = stack.borrow();
+        let span = stack.top().unwrap_or_else(|| {
+            warn!("Using with_thread_span, but no span is active for this thread.");
+            &NOOP_SPAN
+        });
+        f(span)
+    })
+}
 
 pub fn nested<F, G, T>(f: F, g: G) -> T
 where F: FnOnce(&Span) -> Span, G: FnOnce() -> T {
@@ -92,6 +93,22 @@ where F: FnOnce(&Span) -> Span, G: FnOnce() -> T {
         stack.borrow_mut().push_fn(f);
     });
     let result = g();
+    SPANSTACK.with(|stack| {
+        let _ = stack.borrow_mut().pop();
+    });
+    result
+}
+
+pub async fn nested_async<F, G, T, U>(f: F, g: G) -> T 
+where 
+    F: FnOnce(&Span) -> Span, 
+    G: FnOnce() -> U,
+    U: Future<Output = T>,
+{
+    SPANSTACK.with(|stack| {
+        stack.borrow_mut().push_fn(f);
+    });
+    let result = g().await;
     SPANSTACK.with(|stack| {
         let _ = stack.borrow_mut().pop();
     });
@@ -113,7 +130,6 @@ where G: FnOnce() -> T {
     });
     result
 }
-
 
 #[cfg(test)]
 mod tests {
