@@ -88,6 +88,10 @@ pub fn push_span_with<F: FnOnce(&Span) -> Span>(f: F) -> SpanStackGuard {
     SpanStackGuard::new(new_span)
 }
 
+pub fn with_top<A, F: FnOnce(&Span) -> A>(f: F) -> Option<A> {
+    SPANSTACK.with(|stack| stack.borrow().top().map(f))
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
