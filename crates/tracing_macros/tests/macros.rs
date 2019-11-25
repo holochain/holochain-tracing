@@ -67,7 +67,8 @@ fn function_attr() {
     let tracer = ht::Tracer::with_sender(ht::AllSampler, tx);
     let x = {
         let root_span = tracer.span("root").start().into();
-        ht::start_thread_trace(root_span, || funcs::a(0))
+        let _guard = ht::push_root_span(root_span);
+        funcs::a(0)
     };
     assert_eq!(x, 20);
     let num = rx.len();
@@ -86,7 +87,8 @@ fn module_attr() {
     let tracer = ht::Tracer::with_sender(ht::AllSampler, tx);
     let x = {
         let root_span = tracer.span("root").start().into();
-        ht::start_thread_trace(root_span, || mods::d(0))
+        let _guard = ht::push_root_span(root_span);
+        mods::d(0)
     };
     assert_eq!(x, 20);
     let num = rx.len();
@@ -105,10 +107,9 @@ fn method_attr() {
     let tracer = ht::Tracer::with_sender(ht::AllSampler, tx);
     let x = {
         let root_span = tracer.span("root").start().into();
-        ht::start_thread_trace(root_span, || {
-            let s = methods::S {};
-            s.g(0)
-        })
+        let _guard = ht::push_root_span(root_span);        
+        let s = methods::S {};
+        s.g(0)
     };
     assert_eq!(x, 20);
     let num = rx.len();

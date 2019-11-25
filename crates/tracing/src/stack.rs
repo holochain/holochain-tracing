@@ -1,6 +1,7 @@
 
 // use std::fmt;
 use std::cell::RefCell;
+use std::rc::Rc;
 // use syn::{self, ItemFn};
 
 use crate::Span;
@@ -14,106 +15,76 @@ lazy_static! {
 }
 
 #[derive(Default)]
-struct SpanStack(Vec<Span>);
+struct SpanStack(Vec<Rc<Span>>);
 
 impl SpanStack {
 
-    pub fn len(&self) -> usize {
-        self.0.len()
-    }
+    // fn len(&self) -> usize {
+    //     self.0.len()
+    // }
 
-    fn push_span(&mut self, span: Span) {
+    fn push_span(&mut self, span: Rc<Span>) {
         self.0.push(span);
     }
 
-    fn push_fn<F: FnOnce(&Span) -> Span>(&mut self, f: F) {
-        if let Some(top) = self.0.last() {
-            let successor = f(top);
-            self.0.push(successor);
-        } else {
-            warn!("Using push_fn, but the stack is empty!");
-        }
-    }
+    // fn push_fn<F: FnOnce(&Span) -> Rc<Span>>(&mut self, f: F) {
+    //     if let Some(top) = self.0.last() {
+    //         let successor = f(top);
+    //         self.0.push(successor);
+    //     } else {
+    //         warn!("Using push_fn, but the stack is empty!");
+    //     }
+    // }
 
-    fn pop(&mut self) -> Option<Span> {
+    fn pop(&mut self) -> Option<Rc<Span>> {
         self.0.pop()
     }
 
     fn top(&self) -> Option<&Span> {
-        self.0.last()
+        self.0.last().map(|s| (*s).as_ref())
     }
 
-    fn is_empty(&self) -> bool {
-        self.0.is_empty()
-    }
+    // fn is_empty(&self) -> bool {
+    //     self.0.is_empty()
+    // }
 }
 
 
-// #[derive(Debug)]
-// pub enum SpanStackError {
-//     StackNotEmpty
-// }
+pub struct SpanStackGuard {
+    _span: Rc<Span>
+}
 
-// impl std::error::Error for SpanStackError {}
-
-// impl fmt::Display for SpanStackError {
-//     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-//         write!(f, "{:?}", self)
-//     }
-// }
-
-pub fn with_thread_span<F, T>(f: F) -> T
-where F: FnOnce(&Span) -> T {
-    SPANSTACK.with(|stack| {
-        let stack = stack.borrow();
-        let span = stack.top().unwrap_or_else(|| {
-            warn!("Using with_thread_span, but no span is active for this thread.");
-            &NOOP_SPAN
+impl SpanStackGuard {
+    pub fn new(span: Span) -> Self {
+        let span = Rc::new(span);
+        SPANSTACK.with(|stack| {
+            stack.borrow_mut().push_span(span.clone());
         });
-        f(span)
-    })
+        Self { _span: span }
+    }
 }
 
-// pub fn new_span<F>(f: F) -> Span
-// where F: FnOnce(&Span) -> Span {
-//     SPANSTACK.with(|stack| {
-//         let stack = stack.borrow();
-//         let span = stack.top().unwrap_or_else(|| {
-//             warn!("Using with_thread_span, but no span is active for this thread.");
-//             &NOOP_SPAN
-//         });
-//         f(span)
-//     })
-// }
-
-pub fn nested<F, G, T>(f: F, g: G) -> T
-where F: FnOnce(&Span) -> Span, G: FnOnce() -> T {
-    SPANSTACK.with(|stack| {
-        stack.borrow_mut().push_fn(f);
-    });
-    let result = g();
-    SPANSTACK.with(|stack| {
-        let _ = stack.borrow_mut().pop();
-    });
-    result
+impl Drop for SpanStackGuard {
+    fn drop(&mut self) {
+        SPANSTACK.with(|stack| {
+            stack.borrow_mut().pop()
+        });
+    }
 }
 
-pub fn start_thread_trace<G, T>(span: Span, g: G) -> T
-where G: FnOnce() -> T {
-    SPANSTACK.with(|stack| {
-        let mut stack = stack.borrow_mut();
-        if !stack.is_empty() {
-            warn!("Called start_thread_trace, but there were still {} spans left on the stack", stack.len());
-        }
-        stack.push_span(span);
-    });
-    let result = g();
-    SPANSTACK.with(|stack| {
-        let _ = stack.borrow_mut().pop();
-    });
-    result
+pub fn push_root_span(span: Span) -> SpanStackGuard {
+    SpanStackGuard::new(span)
 }
 
+pub fn push_span_with<F: FnOnce(&Span) -> Span>(f: F) -> SpanStackGuard {
+    let new_span = SPANSTACK.with(|stack| {
+        stack.borrow().top().map(f).unwrap_or_else(|| {
+            warn!("Using push_span_with but the span stack is empty! Using noop span.");
+            NOOP_SPAN.child("hey")
+        })
+    });
+    SpanStackGuard::new(new_span)
+}
 
 #[cfg(test)]
 mod tests {
@@ -121,22 +92,23 @@ mod tests {
     use crate::Span;
 
     #[test]
-    fn test_nested() {
+    fn test_push() {
         SPANSTACK.with(|stack| assert_eq!(stack.borrow().len(), 0));
-        let inner = start_thread_trace(Span::noop(), || {
+        {
+            let g0 = push_root_span(Span::noop());
             SPANSTACK.with(|stack| assert_eq!(stack.borrow().len(), 1));
-            let inner = nested(|s| s.child("1"), || {
-                let one = SPANSTACK.with(|stack| stack.borrow().len());
-                let two = nested(|s| s.child("2"), || {
-                    SPANSTACK.with(|stack| stack.borrow().len())
-                });
-                let three = SPANSTACK.with(|stack| stack.borrow().len());
-                (one, two, three)
-            });
+            {
+                let g1 = push_span_with(|s| s.child("1"));
+                SPANSTACK.with(|stack| assert_eq!(stack.borrow().len(), 2));
+                {
+                    let g2 = push_span_with(|s| s.child("2"));
+                    SPANSTACK.with(|stack| assert_eq!(stack.borrow().len(), 3));
+                }
+                SPANSTACK.with(|stack| assert_eq!(stack.borrow().len(), 2));
+            }
             SPANSTACK.with(|stack| assert_eq!(stack.borrow().len(), 1));
-            inner
-        });
-        assert_eq!(inner, (2, 3, 2));
+        }
+        SPANSTACK.with(|stack| assert_eq!(stack.borrow().len(), 0));
     }
 
 }

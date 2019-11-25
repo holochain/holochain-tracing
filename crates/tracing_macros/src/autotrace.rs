@@ -24,11 +24,10 @@ impl Autotrace {
     fn rewrite_block(name: String, block: syn::Block) -> syn::Block {
         let new_tokens: TokenStream = TokenStream::from(quote! {
             {
-                println!("!autotrace! pushing span for {}", #name);
-                ::holochain_tracing::nested(
-                    |span| span.child(#name),
-                    || #block
-                )
+                let __autotrace_guard = ::holochain_tracing::push_span_with(
+                    |span| span.child(#name)
+                );
+                #block
             }
         });
         syn::parse(new_tokens).expect("Couldn't parse new tokens")
