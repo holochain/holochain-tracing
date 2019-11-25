@@ -2,7 +2,7 @@ use crossbeam_channel as cb;
 use crate::{Span, SpanWrap};
 use crate::stack::with_top;
 
-#[derive(Shrinkwrap)]
+#[derive(Clone, Shrinkwrap)]
 pub struct SpanSender<T>(cb::Sender<SpanWrap<T>>);
 
 impl<T> From<cb::Sender<SpanWrap<T>>> for SpanSender<T> {

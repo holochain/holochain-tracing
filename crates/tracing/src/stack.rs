@@ -74,6 +74,16 @@ impl Drop for SpanStackGuard {
     }
 }
 
+fn handle_empty_stack(msg: &'static str) -> Span {
+    let do_panic = true;
+    if do_panic {
+        panic!(msg);
+    } else {
+        warn!("{}", msg);
+        NOOP_SPAN.child("NOOP")
+    }
+}
+
 pub fn push_root_span(span: Span) -> SpanStackGuard {
     SpanStackGuard::new(span)
 }
@@ -81,8 +91,7 @@ pub fn push_root_span(span: Span) -> SpanStackGuard {
 pub fn push_span_with<F: FnOnce(&Span) -> Span>(f: F) -> SpanStackGuard {
     let new_span = SPANSTACK.with(|stack| {
         stack.borrow().top().map(f).unwrap_or_else(|| {
-            warn!("Using push_span_with but the span stack is empty! Using noop span.");
-            NOOP_SPAN.child("hey")
+            handle_empty_stack("Using push_span_with but the span stack is empty! Using noop span.")            
         })
     });
     SpanStackGuard::new(new_span)
