@@ -85,6 +85,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 name = "holochain_tracing"
 version = "0.0.4"
 dependencies = [
+ "backtrace 0.3.40 (registry+https://github.com/rust-lang/crates.io-index)",
  "crossbeam-channel 0.3.8 (registry+https://github.com/rust-lang/crates.io-index)",
  "lazy_static 1.2.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "log 0.4.8 (registry+https://github.com/rust-lang/crates.io-index)",

@@ -1,5 +1,6 @@
 #![feature(rustc_private)]
 
+extern crate backtrace;
 extern crate rustracing;
 extern crate rustracing_jaeger;
 #[macro_use]

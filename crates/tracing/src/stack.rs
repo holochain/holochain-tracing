@@ -6,6 +6,8 @@ use std::rc::Rc;
 
 use crate::Span;
 
+const PANIC_ON_EMPTY_STACK: bool = false;
+
 thread_local! {
     static SPANSTACK: RefCell<SpanStack> = RefCell::new(SpanStack::default());
 }
@@ -75,11 +77,10 @@ impl Drop for SpanStackGuard {
 }
 
 fn handle_empty_stack(msg: &'static str) -> Span {
-    let do_panic = true;
-    if do_panic {
+    if PANIC_ON_EMPTY_STACK {
         panic!(msg);
     } else {
-        warn!("{}", msg);
+        warn!("{}, backtrace:\n{:?}", msg, backtrace::Backtrace::new());
         NOOP_SPAN.child("NOOP")
     }
 }

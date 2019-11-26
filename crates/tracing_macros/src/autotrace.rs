@@ -2,7 +2,7 @@ use proc_macro::TokenStream;
 use quote::quote;
 use syn::{Attribute, ImplItemMethod, ItemFn};
 
-const DEBUG_OUTPUT: bool = true;
+const DEBUG_OUTPUT: bool = false;
 
 #[derive(Default)]
 pub(crate) struct Autotrace {}
