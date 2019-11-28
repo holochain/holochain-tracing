@@ -102,6 +102,13 @@ pub fn with_top<A, F: FnOnce(&Span) -> A>(f: F) -> Option<A> {
     SPANSTACK.with(|stack| stack.borrow().top().map(f))
 }
 
+pub fn with_top_or_noop<A, F: FnOnce(&Span) -> A>(f: F) -> A {
+    SPANSTACK.with(|stack| f(stack.borrow().top().unwrap_or_else(|| {
+        handle_empty_stack("Using with_top_or_noop, but the span stack is empty! Using noop span.");
+        &NOOP_SPAN
+    })))
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

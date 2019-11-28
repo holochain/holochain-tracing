@@ -13,7 +13,7 @@ impl<T> From<cb::Sender<SpanWrap<T>>> for SpanSender<T> {
 
 impl<T: Send> SpanSender<T> {
     pub fn send_wrapped(&self, v: T) -> Result<(), cb::SendError<SpanWrap<T>>> {
-        let span = with_top(|top| top.child("send_with")).unwrap_or_else(|| {
+        let span = with_top(|top| top.follower("send_with")).unwrap_or_else(|| {
             warn!("Using noop span in send_with");
             Span::noop()
         });

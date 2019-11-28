@@ -19,7 +19,7 @@ pub mod tracer_network;
 
 pub use rustracing::{sampler::*, tag::Tag};
 pub use rustracing_jaeger::{reporter::JaegerCompactReporter as Reporter, Tracer};
-pub use stack::{push_root_span, push_span_with};
+pub use stack::{push_root_span, push_span_with, with_top, with_top_or_noop};
 pub use channel::{SpanSender, SpanReceiver};
 pub use crate::span::{
     noop, null_tracer, test_span, EncodedSpanContext, HSpan as Span, HSpanContext as SpanContext,

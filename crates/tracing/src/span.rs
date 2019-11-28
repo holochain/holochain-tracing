@@ -39,7 +39,7 @@ impl HSpan {
     }
 
     /// Renaming of underlying `child` method
-    pub fn child_<'a, N: Into<Cow<'static, str>>, F, C, T>(
+    pub fn child_<'a, N: Into<Cow<'static, str>>, F>(
         &'a self,
         operation_name: N,
         f: F,
@@ -51,7 +51,7 @@ impl HSpan {
     }
 
     /// Renaming of underlying `follow` method
-    pub fn follower_<'a, N: Into<Cow<'static, str>>, F, C, T>(
+    pub fn follower_<'a, N: Into<Cow<'static, str>>, F>(
         &'a self,
         operation_name: N,
         f: F,
@@ -118,6 +118,12 @@ pub struct SpanWrap<T> {
 impl<T> SpanWrap<T> {
     pub fn new(data: T, span: HSpan) -> Self {
         Self { data, span }
+    }
+}
+
+impl<T: std::fmt::Debug> std::fmt::Debug for SpanWrap<T> {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "SpanWrap({:?}, {:?})", self.data, self.span)
     }
 }
 

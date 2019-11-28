@@ -59,15 +59,15 @@ impl syn::fold::Fold for Autotrace {
     //     syn::fold::fold_trait_item_method(self, i)
     // }
 
-    fn fold_item_impl(&mut self, i: syn::ItemImpl) -> syn::ItemImpl {
-        if self.is_no_autotrace(&i.attrs) {
-            return i;
-        }
-        if DEBUG_OUTPUT {
-            println!("#autotrace# fold impl: {:?}", i.self_ty);
-        }
-        syn::fold::fold_item_impl(self, i)
-    }
+    // fn fold_item_impl(&mut self, i: syn::ItemImpl) -> syn::ItemImpl {
+    //     if self.is_no_autotrace(&i.attrs) {
+    //         return i;
+    //     }
+    //     if DEBUG_OUTPUT {
+    //         println!("#autotrace# fold impl: {:?}", i.self_ty);
+    //     }
+    //     syn::fold::fold_item_impl(self, i)
+    // }
 
     fn fold_item_fn(&mut self, i: ItemFn) -> ItemFn {
         if i.sig.constness.is_some() || self.is_no_autotrace(&i.attrs) {
