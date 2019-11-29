@@ -1,12 +1,13 @@
-use crate::rustracing::carrier::{ExtractFromBinary, InjectToBinary};
 use rustracing::sampler::*;
 use rustracing::span::StartSpanOptions;
 use rustracing_jaeger::{
-    span::{SpanContext, SpanContextState},
+    span::SpanContextState,
     Tracer,
 };
-use rustracing_jaeger::{Result, Span as RjSpan};
-use std::{borrow::Cow, io::Cursor};
+use rustracing_jaeger::{Span as RjSpan};
+use std::{borrow::Cow};
+use crate::span_context::HSpanContext;
+use crate::span_wrap::SpanWrap;
 
 /// A wrapper around a simple rustracing_jaeger::RjSpan, providing some
 /// convenience functions.
@@ -89,117 +90,6 @@ impl HSpan {
     /// it'll be simple to hook up whenever you get around it.
     pub fn fixme() -> Self {
         noop("not yet hooked up".into())
-    }
-}
-
-/// SpanWrap is a simple way to couple some data along with a struct. It is
-/// common to send some data on a channel which will be used as arguments
-/// to a function on the receiving side, where we also want to continue the
-/// trace on the receiving side. This struct helps keep that data together
-/// with minimal boilerplate.
-///
-/// The use of shrinkwrap allows the entire struct to be used as if it were
-/// a bare T (in most situations), but the RjSpan can also be extracted.
-#[derive(Shrinkwrap)]
-#[shrinkwrap(mutable)]
-pub struct SpanWrap<T> {
-    #[shrinkwrap(main_field)]
-    pub data: T,
-    pub span_context: Option<HSpanContext>,
-}
-
-impl<T> SpanWrap<T> {
-    pub fn new(data: T, span_context: Option<HSpanContext>) -> Self {
-        Self { data, span_context }
-    }
-
-    pub fn follower<S: Into<Cow<'static, str>>>(
-        &self,
-        tracer: &Tracer,
-        operation_name: S,
-    ) -> Option<HSpan> {
-        self.span_context
-            .as_ref()
-            .map(|context| context.follower(tracer, operation_name))
-    }
-
-    pub fn follower_<'a, N: Into<Cow<'static, str>>, F>(
-        &'a self,
-        tracer: &Tracer,
-        operation_name: N,
-        f: F,
-    ) -> Option<HSpan>
-    where
-        F: FnOnce(StartSpanOptions<'_, BoxSampler<SpanContextState>, SpanContextState>) -> RjSpan,
-    {
-        self.span_context
-            .as_ref()
-            .map(|context| context.follower_(tracer, operation_name, f))
-    }
-}
-
-impl<T: std::fmt::Debug> std::fmt::Debug for SpanWrap<T> {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "SpanWrap({:?}, {:?})", self.data, self.span_context)
-    }
-}
-
-/// Binary representation is exactly 37 bytes, so ideally
-/// we would use a [u8; 37], but this is easier...
-pub type EncodedSpanContext = Vec<u8>;
-
-/// An OpenTracing SpanContext is used to send span info across a process
-/// boundary. This is a simple wrapper around that, again with some helper
-/// functions.
-#[derive(Clone, Debug)]
-pub struct HSpanContext(pub SpanContext);
-
-impl HSpanContext {
-    /// Create a follower RjSpan from this SpanContext
-    /// NB: there is intentionally no method to create a child span from a context,
-    /// since it's assumed that all inter-process points of a trace are async and
-    /// the parent span will have ended before this one does
-    pub fn follower<S: Into<Cow<'static, str>>>(
-        &self,
-        tracer: &Tracer,
-        operation_name: S,
-    ) -> HSpan {
-        tracer
-            .span(operation_name)
-            .follows_from(&self.0)
-            .start()
-            .into()
-    }
-
-    pub fn follower_<'a, N: Into<Cow<'static, str>>, F>(
-        &'a self,
-        tracer: &Tracer,
-        operation_name: N,
-        f: F,
-    ) -> HSpan
-    where
-        F: FnOnce(StartSpanOptions<'_, BoxSampler<SpanContextState>, SpanContextState>) -> RjSpan,
-    {
-        f(tracer.span(operation_name).follows_from(&self.0)).into()
-    }
-
-    /// Serialize to binary format for packing into a IPC message
-    pub fn encode(&self) -> Result<EncodedSpanContext> {
-        let mut enc: Vec<u8> = [0; 37].to_vec(); // OpenTracing binary format is 37 bytes
-        let mut slice = &mut enc[..];
-        SpanContextState::inject_to_binary(&self.0, &mut slice)?;
-        Ok(enc)
-    }
-
-    /// Deserialize from binary format
-    pub fn decode(enc: &EncodedSpanContext) -> Result<Self> {
-        let mut cursor = Cursor::new(enc);
-        SpanContextState::extract_from_binary(&mut cursor).map(|x| HSpanContext(x.unwrap()))
-    }
-
-    /// Wrap this context in a SpanWrap along with some user data
-    pub fn wrap<T>(self, data: T) -> SpanWrap<T> {
-        SpanWrap::new(data, Some(self))
     }
 }
 

@@ -91,7 +91,8 @@ fn print_span(span_map: &SpanMap, span: &FinishedSpan, only_events: bool) {
 }
 
 /// Print a single span with it's hierachy
-fn print_span_stack(span_map: &SpanMap, span_id: u64) {
+/// TODO: this was moved from public to private, but is this used externally?
+fn _print_span_stack(span_map: &SpanMap, span_id: u64) {
     let maybe_span = span_map.get(&span_id);
     let span = match maybe_span {
         None => return,
@@ -100,10 +101,10 @@ fn print_span_stack(span_map: &SpanMap, span_id: u64) {
     for span_ref in span.references() {
         match span_ref {
             ChildOf(parent) => {
-                print_span_stack(span_map, parent.span_id());
+                _print_span_stack(span_map, parent.span_id());
             }
             FollowsFrom(sibling) => {
-                print_span_stack(span_map, sibling.span_id());
+                _print_span_stack(span_map, sibling.span_id());
             }
         }
     }
