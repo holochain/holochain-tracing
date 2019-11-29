@@ -12,7 +12,6 @@ extern crate log;
 
 mod channel;
 mod span;
-pub mod span_map;
 mod stack;
 pub mod tracer_console;
 pub mod tracer_network;
