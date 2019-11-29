@@ -1,6 +1,6 @@
-use crossbeam_channel as cb;
-use crate::{Span, SpanWrap};
 use crate::stack::with_top;
+use crate::SpanWrap;
+use crossbeam_channel as cb;
 
 #[derive(Clone, Shrinkwrap)]
 pub struct SpanSender<T>(cb::Sender<SpanWrap<T>>);
@@ -13,12 +13,9 @@ impl<T> From<cb::Sender<SpanWrap<T>>> for SpanSender<T> {
 
 impl<T: Send> SpanSender<T> {
     pub fn send_wrapped(&self, v: T) -> Result<(), cb::SendError<SpanWrap<T>>> {
-        let span = with_top(|top| top.follower("send_with")).unwrap_or_else(|| {
-            warn!("Using noop span in send_with");
-            Span::noop()
-        });
+        let context = with_top(|top| top.and_then(|t| t.context().clone()));
         // .and_then(|span| {
-            self.0.send(span.wrap(v))
+        self.0.send(SpanWrap::new(v, context))
         // })
     }
 }

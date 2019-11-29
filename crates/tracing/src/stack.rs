@@ -1,12 +1,22 @@
-
 // use std::fmt;
 use std::cell::RefCell;
 use std::rc::Rc;
-// use syn::{self, ItemFn};
 
 use crate::Span;
 
-const PANIC_ON_EMPTY_STACK: bool = false;
+/// This enum defines how to handle situations where we expect there to be a Span
+/// on the stack, but there is none.
+#[allow(dead_code)]
+enum Mode {
+    /// Panic when finding an empty stack. Useful for quickly discovering gaps in tracing coverage
+    Panic,
+    /// Emit a warning and a full backtrace. Note, this is very noisy and slow!
+    Backtrace,
+    /// Ignore cases of an empty stack, and just return a null span.
+    Noop,
+}
+
+const MODE: Mode = Mode::Noop;
 
 thread_local! {
     static SPANSTACK: RefCell<SpanStack> = RefCell::new(SpanStack::default());
@@ -20,7 +30,6 @@ lazy_static! {
 struct SpanStack(Vec<Rc<Span>>);
 
 impl SpanStack {
-
     // fn len(&self) -> usize {
     //     self.0.len()
     // }
@@ -51,9 +60,14 @@ impl SpanStack {
     // }
 }
 
-
+/// A guard to track the lifetime of an item on the stack. Items are popped from the stack
+/// when these guards are dropped.
+/// Each guard corresponds to a single item in the stack, and contains Rc references
+/// to each item below this item in the stack.
+/// This is such that if a guard for an item is dropped, the item will not be popped from the stack
+/// if there are still guards from higher-up items still on the stack.
 pub struct SpanStackGuard {
-    _spans: Vec<Rc<Span>>
+    _spans: Vec<Rc<Span>>,
 }
 
 impl SpanStackGuard {
@@ -70,43 +84,41 @@ impl SpanStackGuard {
 
 impl Drop for SpanStackGuard {
     fn drop(&mut self) {
-        SPANSTACK.with(|stack| {
-            stack.borrow_mut().pop()
-        });
+        SPANSTACK.with(|stack| stack.borrow_mut().pop());
     }
 }
 
-fn handle_empty_stack(msg: &'static str) -> Span {
-    if PANIC_ON_EMPTY_STACK {
-        panic!(msg);
-    } else {
-        warn!("{}, backtrace:\n{:?}", msg, backtrace::Backtrace::new());
-        NOOP_SPAN.child("NOOP")
-    }
+fn handle_empty_stack(msg: &'static str) {
+    match MODE {
+        Mode::Panic => panic!(msg),
+        Mode::Backtrace => {
+            warn!("{}, backtrace:\n{:?}", msg, backtrace::Backtrace::new());
+        }
+        Mode::Noop => (),
+    };
 }
 
-pub fn push_root_span(span: Span) -> SpanStackGuard {
+/// Push a span onto the stack. The value will automatically be popped when the returned guard
+/// is dropped, as well as the guards of any subsequently pushed spans
+pub fn push_span(span: Span) -> SpanStackGuard {
     SpanStackGuard::new(span)
 }
 
-pub fn push_span_with<F: FnOnce(&Span) -> Span>(f: F) -> SpanStackGuard {
-    let new_span = SPANSTACK.with(|stack| {
-        stack.borrow().top().map(f).unwrap_or_else(|| {
-            handle_empty_stack("Using push_span_with but the span stack is empty! Using noop span.")            
-        })
-    });
-    SpanStackGuard::new(new_span)
+/// Applies a function to the top of the span stack and pushes the value onto the stack.
+/// If the stack is empty, the function will not be executed and None will be returned.
+pub fn push_span_with<F: FnOnce(&Span) -> Span>(f: F) -> Option<SpanStackGuard> {
+    let maybe_guard = SPANSTACK
+        .with(|stack| stack.borrow().top().map(f))
+        .map(SpanStackGuard::new);
+    if maybe_guard.is_none() {
+        handle_empty_stack("Using push_span_with but the span stack is empty! Using noop span.");
+    }
+    maybe_guard
 }
 
-pub fn with_top<A, F: FnOnce(&Span) -> A>(f: F) -> Option<A> {
-    SPANSTACK.with(|stack| stack.borrow().top().map(f))
-}
-
-pub fn with_top_or_noop<A, F: FnOnce(&Span) -> A>(f: F) -> A {
-    SPANSTACK.with(|stack| f(stack.borrow().top().unwrap_or_else(|| {
-        handle_empty_stack("Using with_top_or_noop, but the span stack is empty! Using noop span.");
-        &NOOP_SPAN
-    })))
+/// If the stack is not empty, return the top item, else return None
+pub fn with_top<A, F: FnOnce(Option<&Span>) -> Option<A>>(f: F) -> Option<A> {
+    SPANSTACK.with(|stack| f(stack.borrow().top()))
 }
 
 #[cfg(test)]
@@ -118,7 +130,7 @@ mod tests {
     fn test_push() {
         SPANSTACK.with(|stack| assert_eq!(stack.borrow().0.len(), 0));
         {
-            let _g0 = push_root_span(Span::noop());
+            let _g0 = push_span(Span::noop());
             SPANSTACK.with(|stack| assert_eq!(stack.borrow().0.len(), 1));
             {
                 let _g1 = push_span_with(|s| s.child("1"));

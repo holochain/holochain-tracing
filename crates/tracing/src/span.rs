@@ -1,11 +1,12 @@
-
 use crate::rustracing::carrier::{ExtractFromBinary, InjectToBinary};
-use rustracing::{span::StartSpanOptions};
-use rustracing::{sampler::*};
-use rustracing_jaeger::{Tracer, span::{SpanContext, SpanContextState}};
-use std::{borrow::Cow, io::Cursor};
+use rustracing::sampler::*;
+use rustracing::span::StartSpanOptions;
+use rustracing_jaeger::{
+    span::{SpanContext, SpanContextState},
+    Tracer,
+};
 use rustracing_jaeger::{Result, Span as RjSpan};
-
+use std::{borrow::Cow, io::Cursor};
 
 /// A wrapper around a simple rustracing_jaeger::RjSpan, providing some
 /// convenience functions.
@@ -39,11 +40,7 @@ impl HSpan {
     }
 
     /// Renaming of underlying `child` method
-    pub fn child_<'a, N: Into<Cow<'static, str>>, F>(
-        &'a self,
-        operation_name: N,
-        f: F,
-    ) -> RjSpan
+    pub fn child_<'a, N: Into<Cow<'static, str>>, F>(&'a self, operation_name: N, f: F) -> RjSpan
     where
         F: FnOnce(StartSpanOptions<'_, AllSampler, SpanContextState>) -> RjSpan,
     {
@@ -51,11 +48,7 @@ impl HSpan {
     }
 
     /// Renaming of underlying `follow` method
-    pub fn follower_<'a, N: Into<Cow<'static, str>>, F>(
-        &'a self,
-        operation_name: N,
-        f: F,
-    ) -> RjSpan
+    pub fn follower_<'a, N: Into<Cow<'static, str>>, F>(&'a self, operation_name: N, f: F) -> RjSpan
     where
         F: FnOnce(StartSpanOptions<'_, AllSampler, SpanContextState>) -> RjSpan,
     {
@@ -74,7 +67,7 @@ impl HSpan {
 
     /// Wrap this span in a SpanWrap along with some user data
     pub fn wrap<T>(self, data: T) -> SpanWrap<T> {
-        SpanWrap::new(data, self)
+        SpanWrap::new(data, self.0.context().cloned().map(HSpanContext))
     }
 
     /// e.g. for times when a function requires a RjSpan but we don't desire to actually
@@ -112,18 +105,42 @@ impl HSpan {
 pub struct SpanWrap<T> {
     #[shrinkwrap(main_field)]
     pub data: T,
-    pub span: HSpan,
+    pub span_context: Option<HSpanContext>,
 }
 
 impl<T> SpanWrap<T> {
-    pub fn new(data: T, span: HSpan) -> Self {
-        Self { data, span }
+    pub fn new(data: T, span_context: Option<HSpanContext>) -> Self {
+        Self { data, span_context }
+    }
+
+    pub fn follower<S: Into<Cow<'static, str>>>(
+        &self,
+        tracer: &Tracer,
+        operation_name: S,
+    ) -> Option<HSpan> {
+        self.span_context
+            .as_ref()
+            .map(|context| context.follower(tracer, operation_name))
+    }
+
+    pub fn follower_<'a, N: Into<Cow<'static, str>>, F>(
+        &'a self,
+        tracer: &Tracer,
+        operation_name: N,
+        f: F,
+    ) -> Option<HSpan>
+    where
+        F: FnOnce(StartSpanOptions<'_, BoxSampler<SpanContextState>, SpanContextState>) -> RjSpan,
+    {
+        self.span_context
+            .as_ref()
+            .map(|context| context.follower_(tracer, operation_name, f))
     }
 }
 
 impl<T: std::fmt::Debug> std::fmt::Debug for SpanWrap<T> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "SpanWrap({:?}, {:?})", self.data, self.span)
+        write!(f, "SpanWrap({:?}, {:?})", self.data, self.span_context)
     }
 }
 
@@ -134,6 +151,7 @@ pub type EncodedSpanContext = Vec<u8>;
 /// An OpenTracing SpanContext is used to send span info across a process
 /// boundary. This is a simple wrapper around that, again with some helper
 /// functions.
+#[derive(Clone, Debug)]
 pub struct HSpanContext(pub SpanContext);
 
 impl HSpanContext {
@@ -153,6 +171,18 @@ impl HSpanContext {
             .into()
     }
 
+    pub fn follower_<'a, N: Into<Cow<'static, str>>, F>(
+        &'a self,
+        tracer: &Tracer,
+        operation_name: N,
+        f: F,
+    ) -> HSpan
+    where
+        F: FnOnce(StartSpanOptions<'_, BoxSampler<SpanContextState>, SpanContextState>) -> RjSpan,
+    {
+        f(tracer.span(operation_name).follows_from(&self.0)).into()
+    }
+
     /// Serialize to binary format for packing into a IPC message
     pub fn encode(&self) -> Result<EncodedSpanContext> {
         let mut enc: Vec<u8> = [0; 37].to_vec(); // OpenTracing binary format is 37 bytes
@@ -165,6 +195,11 @@ impl HSpanContext {
     pub fn decode(enc: &EncodedSpanContext) -> Result<Self> {
         let mut cursor = Cursor::new(enc);
         SpanContextState::extract_from_binary(&mut cursor).map(|x| HSpanContext(x.unwrap()))
+    }
+
+    /// Wrap this context in a SpanWrap along with some user data
+    pub fn wrap<T>(self, data: T) -> SpanWrap<T> {
+        SpanWrap::new(data, Some(self))
     }
 }
 
