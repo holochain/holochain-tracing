@@ -1,5 +1,3 @@
-#![feature(rustc_private)]
-
 pub mod span_map;
 pub mod tracer_console;
 pub mod tracer_network;
