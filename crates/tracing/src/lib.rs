@@ -20,6 +20,6 @@ pub use rustracing::{sampler::*, tag::Tag};
 pub use rustracing_jaeger::{reporter::JaegerCompactReporter as Reporter, Tracer};
 pub use stack::{push_span, push_span_with, with_top};
 pub use channel::{SpanSender, SpanReceiver};
-pub use crate::span::{ HSpan as Span, noop, null_tracer, test_span };
+pub use crate::span::{HSpan as Span, null_tracer, test_span};
 pub use crate::span_context::{EncodedSpanContext, HSpanContext as SpanContext};
 pub use crate::span_wrap::{SpanWrap};

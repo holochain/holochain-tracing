@@ -99,7 +99,7 @@ pub fn null_tracer() -> Tracer {
 }
 
 /// TODO: use lazy_static / thread_local singleton Tracer
-pub fn noop(name: String) -> HSpan {
+fn noop(name: String) -> HSpan {
     null_tracer().span(name).start().into()
 }
 
