@@ -1,16 +1,63 @@
-//! A HashMap of finished span. Used by ConsoleReporter.
-
+use crate::Tracer;
+pub use rustracing::sampler::AllSampler;
 use rustracing::span::{FinishedSpan as RtFinishedSpan, SpanReference::*};
 use rustracing_jaeger::span::SpanContextState;
 use std::collections::{BTreeMap, HashMap};
 
+/// Create a Tracer and Reporter that reports all spans in ASCII form
+pub fn new_tracer_with_console_reporter() -> (Tracer, ConsoleReporter) {
+    let (span_tx, span_rx) = crossbeam_channel::bounded(1000);
+    let tracer = Tracer::with_sender(AllSampler, span_tx);
+    (tracer, ConsoleReporter::new(span_rx))
+}
+
+/// A Reporter that stores all spans it receives in a map,
+/// with the intent to display all received spans to the console.
+#[derive(Debug)]
+pub struct ConsoleReporter {
+    span_rx: crossbeam_channel::Receiver<FinishedSpan>,
+    span_map: SpanMap,
+}
+
+impl ConsoleReporter {
+    /// Constructor
+    pub fn new(span_rx: crossbeam_channel::Receiver<FinishedSpan>) -> Self {
+        ConsoleReporter {
+            span_rx,
+            span_map: HashMap::new(),
+        }
+    }
+
+    /// Delete all stored spans
+    pub fn clear(&mut self) {
+        let _ = self.drain();
+        self.span_map.clear();
+    }
+
+    /// Drain `span_rx` and add to map
+    /// TODO: Could be done periodically in a separate thread
+    pub fn drain(&mut self) -> u32 {
+        let mut count = 0;
+        while let Ok(span) = self.span_rx.try_recv() {
+            count += 1;
+            self.span_map.insert(span.context().state().span_id(), span);
+        }
+        count
+    }
+
+    /// Print span_map to console
+    pub fn print(&self, only_events: bool) {
+        print_span_map(&self.span_map, only_events);
+    }
+}
+
 /// Sugar, as we are using rusttracing specifically with rustracing_jaeger
-pub type FinishedSpan = RtFinishedSpan<SpanContextState>;
+type FinishedSpan = RtFinishedSpan<SpanContextState>;
 /// A HashMap of finished span. Key is span_id.
-pub type SpanMap = std::collections::HashMap<u64, FinishedSpan>;
+type SpanMap = std::collections::HashMap<u64, FinishedSpan>;
 
 /// Print a span but only its logs
-pub fn print_span_events(span: &FinishedSpan) {
+fn print_span_events(span: &FinishedSpan) {
     for log in span.logs() {
         for field in log.fields() {
             println!("{}", field.value());
@@ -19,7 +66,7 @@ pub fn print_span_events(span: &FinishedSpan) {
 }
 
 /// Print a single span
-pub fn print_span(span_map: &SpanMap, span: &FinishedSpan, only_events: bool) {
+fn print_span(span_map: &SpanMap, span: &FinishedSpan, only_events: bool) {
     if only_events {
         print_span_events(span);
     } else {
@@ -44,7 +91,8 @@ pub fn print_span(span_map: &SpanMap, span: &FinishedSpan, only_events: bool) {
 }
 
 /// Print a single span with it's hierachy
-pub fn print_span_stack(span_map: &SpanMap, span_id: u64) {
+/// TODO: this was moved from public to private, but is this used externally?
+fn _print_span_stack(span_map: &SpanMap, span_id: u64) {
     let maybe_span = span_map.get(&span_id);
     let span = match maybe_span {
         None => return,
@@ -53,10 +101,10 @@ pub fn print_span_stack(span_map: &SpanMap, span_id: u64) {
     for span_ref in span.references() {
         match span_ref {
             ChildOf(parent) => {
-                print_span_stack(span_map, parent.span_id());
+                _print_span_stack(span_map, parent.span_id());
             }
             FollowsFrom(sibling) => {
-                print_span_stack(span_map, sibling.span_id());
+                _print_span_stack(span_map, sibling.span_id());
             }
         }
     }
@@ -64,7 +112,7 @@ pub fn print_span_stack(span_map: &SpanMap, span_id: u64) {
 }
 
 /// Print the span_map as a tree
-pub fn print_span_map(span_map: &SpanMap, only_events: bool) {
+fn print_span_map(span_map: &SpanMap, only_events: bool) {
     // Create children & sibling map
     let mut sibling_map = HashMap::new();
     let mut children_map = HashMap::new();
@@ -160,7 +208,7 @@ fn print_span_tree(
 }
 
 /// gives the depth and sibling offset of a span
-pub fn get_span_position(span_map: &SpanMap, span_id: u64) -> Option<(u32, u32)> {
+fn get_span_position(span_map: &SpanMap, span_id: u64) -> Option<(u32, u32)> {
     let maybe_span = span_map.get(&span_id);
     let span = match maybe_span {
         None => return None,

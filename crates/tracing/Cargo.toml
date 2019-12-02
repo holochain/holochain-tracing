@@ -1,0 +1,25 @@
+[package]
+name = "holochain_tracing"
+version = "0.0.4"
+authors = ["Holochain Core Dev Team <devcore@holochain.org>"]
+edition = "2018"
+description = "abstraction for distributed tracing choices"
+keywords = ["holochain", "holo", "tracing"]
+categories = ["tracing"]
+license = "Apache-2.0"
+readme = "README.md"
+documentation = "https://docs.rs/holochain_tracing"
+repository = "https://github.com/holochain/holochain-tracing"
+
+[[bin]]
+name = "jaeger-report-tester"
+path = "bin/test_network_reporter.rs"
+
+[dependencies]
+crossbeam-channel = "=0.3.8"
+lazy_static = "=1.2.0"
+rustracing = "=0.2.0"
+rustracing_jaeger = "=0.2.1"
+shrinkwraprs = "0.2.1"
+log = "0.4.8"
+backtrace = "0.3.27"

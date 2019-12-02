@@ -1,11 +1,11 @@
 use std::{thread, time::Duration};
 
-use holochain_tracing::{tracer_network::new_tracer_with_network_reporter, *};
+use holochain_tracing::{tracer_network::new_tracer_with_network_reporter, Span, *};
 
 /// For manually testing if we can see reports on a jaeger client
 fn main() {
     let tracer = new_tracer_with_network_reporter("report_test");
-    let parent_span: HSpan = tracer.span("parent").start().into();
+    let parent_span: Span = tracer.span("parent").start().into();
     {
         for i in 0..10 {
             thread::sleep(Duration::from_millis(100));
