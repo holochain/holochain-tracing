@@ -107,7 +107,7 @@ fn method_attr() {
     let tracer = ht::Tracer::with_sender(ht::AllSampler, tx);
     let x = {
         let root_span = tracer.span("root").start().into();
-        let _guard = ht::push_span(root_span);        
+        let _guard = ht::push_span(root_span);
         let s = methods::S {};
         s.g(0)
     };

@@ -1,13 +1,10 @@
-use rustracing::sampler::*;
-use rustracing::span::StartSpanOptions;
-use rustracing_jaeger::{
-    span::SpanContextState,
-    Tracer,
-};
-use rustracing_jaeger::{Span as RjSpan};
-use std::{borrow::Cow};
 use crate::span_context::HSpanContext;
 use crate::span_wrap::SpanWrap;
+use rustracing::sampler::*;
+use rustracing::span::StartSpanOptions;
+use rustracing_jaeger::Span as RjSpan;
+use rustracing_jaeger::{span::SpanContextState, Tracer};
+use std::borrow::Cow;
 
 /// A wrapper around a simple rustracing_jaeger::RjSpan, providing some
 /// convenience functions.

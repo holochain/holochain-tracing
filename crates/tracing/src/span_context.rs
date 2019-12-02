@@ -1,14 +1,14 @@
 use crate::rustracing::carrier::{ExtractFromBinary, InjectToBinary};
+use crate::span::HSpan;
+use crate::span_wrap::SpanWrap;
 use rustracing::sampler::*;
 use rustracing::span::StartSpanOptions;
 use rustracing_jaeger::{
     span::{SpanContext, SpanContextState},
     Tracer,
 };
-use std::{borrow::Cow, io::Cursor};
 use rustracing_jaeger::{Result, Span as RjSpan};
-use crate::span::HSpan;
-use crate::span_wrap::SpanWrap;
+use std::{borrow::Cow, io::Cursor};
 
 /// Binary representation is exactly 37 bytes, so ideally
 /// we would use a [u8; 37], but this is easier...

@@ -151,5 +151,4 @@ mod tests {
         }
         SPANSTACK.with(|stack| assert_eq!(stack.borrow().0.len(), 0));
     }
-
 }

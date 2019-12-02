@@ -1,14 +1,10 @@
-
-use rustracing::sampler::*;
-use rustracing::span::StartSpanOptions;
-use rustracing_jaeger::{
-    span::{SpanContextState},
-    Tracer,
-};
-use std::{borrow::Cow};
-use rustracing_jaeger::{Span as RjSpan};
 use crate::span::HSpan;
 use crate::span_context::HSpanContext;
+use rustracing::sampler::*;
+use rustracing::span::StartSpanOptions;
+use rustracing_jaeger::Span as RjSpan;
+use rustracing_jaeger::{span::SpanContextState, Tracer};
+use std::borrow::Cow;
 
 /// SpanWrap is a simple way to couple some data along with a struct. It is
 /// common to send some data on a channel which will be used as arguments
