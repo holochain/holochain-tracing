@@ -15,7 +15,7 @@ repository = "https://github.com/holochain/holochain-tracing"
 proc-macro = true
 
 [dependencies]
-holochain_tracing = { path = "../tracing" }
+holochain_tracing = "=0.0.4"
 syn = { version = "1.0.8", features = ["full", "fold"] }
 quote = "1.0.2"
 crossbeam-channel = "=0.3.8"
