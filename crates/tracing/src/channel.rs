@@ -14,9 +14,7 @@ impl<T> From<cb::Sender<SpanWrap<T>>> for SpanSender<T> {
 impl<T: Send> SpanSender<T> {
     pub fn send_wrapped(&self, v: T) -> Result<(), cb::SendError<SpanWrap<T>>> {
         let context = with_top(|top| top.and_then(|t| t.context().clone()));
-        // .and_then(|span| {
         self.0.send(SpanWrap::new(v, context))
-        // })
     }
 }
 

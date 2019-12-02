@@ -32,26 +32,18 @@ lazy_static! {
     static ref NOOP_SPAN: Span = Span::noop();
 }
 
+/// Internal representation of a stack of Rc<Span>
+/// Keep this private! We're doing some careful management of Rc lifetimes here,
+/// it would be a shame if these Rc's were to leak out, destroying the guarantees
+/// of the span stack.
 #[derive(Default)]
 struct SpanStack(Vec<Rc<Span>>);
 
 impl SpanStack {
-    // fn len(&self) -> usize {
-    //     self.0.len()
-    // }
 
     fn push_span(&mut self, span: Rc<Span>) {
         self.0.push(span);
     }
-
-    // fn push_fn<F: FnOnce(&Span) -> Rc<Span>>(&mut self, f: F) {
-    //     if let Some(top) = self.0.last() {
-    //         let successor = f(top);
-    //         self.0.push(successor);
-    //     } else {
-    //         warn!("Using push_fn, but the stack is empty!");
-    //     }
-    // }
 
     fn pop(&mut self) {
         let _ = self.0.pop();
@@ -61,9 +53,9 @@ impl SpanStack {
         self.0.last().map(|s| (*s).as_ref())
     }
 
-    // fn is_empty(&self) -> bool {
-    //     self.0.is_empty()
-    // }
+    fn is_empty(&self) -> bool {
+        self.0.is_empty()
+    }
 }
 
 /// A guard to track the lifetime of an item on the stack. Items are popped from the stack
@@ -125,6 +117,10 @@ pub fn push_span_with<F: FnOnce(&Span) -> Span>(f: F) -> Option<SpanStackGuard> 
 /// If the stack is not empty, return the top item, else return None
 pub fn with_top<A, F: FnOnce(Option<&Span>) -> Option<A>>(f: F) -> Option<A> {
     SPANSTACK.with(|stack| f(stack.borrow().top()))
+}
+
+pub fn is_empty() -> bool {
+    SPANSTACK.with(|stack| stack.borrow().is_empty())
 }
 
 #[cfg(test)]

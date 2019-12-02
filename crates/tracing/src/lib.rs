@@ -22,4 +22,4 @@ pub use crate::span_wrap::SpanWrap;
 pub use channel::{SpanReceiver, SpanSender};
 pub use rustracing::{sampler::*, tag::Tag};
 pub use rustracing_jaeger::{reporter::JaegerCompactReporter as Reporter, Tracer};
-pub use stack::{push_span, push_span_with, with_top};
+pub use stack::{push_span, push_span_with, with_top, is_empty};
