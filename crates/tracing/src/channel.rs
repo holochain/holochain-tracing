@@ -19,3 +19,17 @@ impl<T: Send> SpanSender<T> {
 }
 
 pub type SpanReceiver<T> = cb::Receiver<SpanWrap<T>>;
+
+pub fn lax_send_wrapped<T: Send + std::fmt::Debug>(
+    tx: SpanSender<T>,
+    val: T,
+    _failure_reason: &str,
+) -> bool {
+    match tx.send_wrapped(val) {
+        Ok(()) => true,
+        Err(_) => {
+            // println!("[lax_send]\n{}\n{:?}\n", _failure_reason, val);
+            false
+        }
+    }
+}
