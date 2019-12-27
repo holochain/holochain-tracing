@@ -114,7 +114,7 @@ dependencies = [
 
 [[package]]
 name = "holochain_tracing_macros"
-version = "0.0.2"
+version = "0.0.3"
 dependencies = [
  "crossbeam-channel 0.3.8 (registry+https://github.com/rust-lang/crates.io-index)",
  "holochain_tracing 0.0.6",
