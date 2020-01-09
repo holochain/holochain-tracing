@@ -39,6 +39,23 @@ mod mods {
     }
 }
 
+//start with cargo test NEW_RELIC_LICENSE_KEY=<KEY_GOES_HERE>, Compile time so hard to check
+#[autotrace("TEST,DEBUG")]
+mod mods_with_new_relic {
+    use holochain_tracing_macros::*;
+
+    pub fn d(x: u32) -> u32 {
+        e(x) * 10
+    }
+    #[autotrace]
+    pub fn e(x: u32) -> u32 {
+        f(x) * 2
+    }
+    pub fn f(x: u32) -> u32 {
+        x + 1
+    }
+}
+
 #[autotrace]
 mod methods {
     use holochain_tracing_macros::*;
