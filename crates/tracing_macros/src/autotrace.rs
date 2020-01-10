@@ -1,39 +1,14 @@
 extern crate newrelic;
 use proc_macro::TokenStream;
 use quote::quote;
-use std::env;
 use syn::{Attribute, ImplItemMethod, ItemFn};
 
 const DEBUG_OUTPUT: bool = false;
 
 #[derive(Default)]
-pub(crate) struct Autotrace {
-    app_name: String,
-    license_key: Option<String>,
-}
+pub(crate) struct Autotrace;
 
 impl Autotrace {
-    pub fn new(attr: TokenStream) -> Self {
-        let app_name = attr
-            .clone()
-            .into_iter()
-            .nth(0)
-            .map(|token| token.to_string())
-            .unwrap_or("UNDEFINED".to_string());
-        let license_key = env::var("NEW_RELIC_LICENSE_KEY")
-            .map(|license_key| Some(license_key))
-            .unwrap_or_else(|_| {
-                attr.clone()
-                    .into_iter()
-                    .nth(1)
-                    .map(|token| Some(token.to_string()))
-                    .unwrap_or(None)
-            });
-        Self {
-            app_name,
-            license_key,
-        }
-    }
     fn is_no_autotrace(&self, i: &[Attribute]) -> bool {
         i.iter().any(|ref a| {
             if a.path.segments.len() == 1 {
@@ -48,50 +23,20 @@ impl Autotrace {
 
 impl Autotrace {
     fn rewrite_block(
-        app_name: &String,
-        license_key: &Option<String>,
         name: String,
         block: syn::Block,
     ) -> syn::Block {
-        let new_block = license_key
-            .as_ref()
-            .map(|license_key| {
-                //structure of func created will replce old function but have new relic recording capabilities
+        let new_block = 
                 quote! {
                 {
-                    let __autotrace_guard = ::holochain_tracing::push_span_with(
-                        |span| span.child(#name)
-                    );
 
-                    //if new relic is somehow down or the daemon is not running, the program should continue normally
-                    //stated away from combinators because of closure ownership
-                    if let Ok(live_app) = newrelic::App::new(#app_name, #license_key)
-                    {
-                        if let Ok(transaction) = live_app.non_web_transaction(#name)
-                        {
-                            #block
-                        }
-                        else
-                        {
-                            #block
-                        }
-                    }
-                    else
-                    {
-                        #block
-                    }
-                }}
-            })
-            .unwrap_or_else(|| {
-                quote! {
-                    {
+
                         let __autotrace_guard = ::holochain_tracing::push_span_with(
                             |span| span.child(#name)
                         );
                         #block
                     }
-                }
-            });
+                };
         syn::parse(TokenStream::from(new_block))
             .expect("Couldn't parse statement when rewriting block")
     }
@@ -142,8 +87,6 @@ impl syn::fold::Fold for Autotrace {
             println!("#autotrace# fold fn: {}", func_name);
         }
         i.block = Box::new(Autotrace::rewrite_block(
-            &self.app_name,
-            &self.license_key,
             func_name,
             *i.block,
         ));
@@ -159,7 +102,7 @@ impl syn::fold::Fold for Autotrace {
         if DEBUG_OUTPUT {
             println!("#autotrace# fold method: {}", method_name);
         }
-        i.block = Autotrace::rewrite_block(&self.app_name, &self.license_key, method_name, i.block);
+        i.block = Autotrace::rewrite_block(method_name, i.block);
         i
     }
 }
