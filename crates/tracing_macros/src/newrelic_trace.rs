@@ -9,8 +9,7 @@ pub(crate) struct NewRelicTrace {
     license_key: Option<String>,
 }
 
-impl NewRelicTrace
-{
+impl NewRelicTrace {
     pub fn new(attr: TokenStream) -> Self {
         let app_name = attr
             .clone()
@@ -34,8 +33,8 @@ impl NewRelicTrace
     }
 
     fn rewrite_block(
-        app_name : &String,
-        license_key : &Option<String>,
+        app_name: &String,
+        license_key: &Option<String>,
         name: String,
         block: syn::Block,
     ) -> syn::Block {
@@ -79,7 +78,10 @@ impl NewRelicTrace
 impl syn::fold::Fold for NewRelicTrace {
     fn fold_item_mod(&mut self, i: syn::ItemMod) -> syn::ItemMod {
         #[cfg(debug_assertions)]
-        println!("#newrelic_trace# rewriting for module: {}", i.ident.to_string());
+        println!(
+            "#newrelic_trace# rewriting for module: {}",
+            i.ident.to_string()
+        );
         syn::fold::fold_item_mod(self, i)
     }
 
@@ -91,7 +93,8 @@ impl syn::fold::Fold for NewRelicTrace {
         #[cfg(debug_assertions)]
         println!("#newrelic_trace# rewriting for function: {}", func_name);
         let mut i = i;
-        i.block = Box::new(NewRelicTrace::rewrite_block(&self.app_name,
+        i.block = Box::new(NewRelicTrace::rewrite_block(
+            &self.app_name,
             &self.license_key,
             func_name,
             *i.block,
@@ -100,14 +103,18 @@ impl syn::fold::Fold for NewRelicTrace {
     }
 
     fn fold_impl_item_method(&mut self, i: ImplItemMethod) -> ImplItemMethod {
-        if i.sig.constness.is_some(){
+        if i.sig.constness.is_some() {
             return i;
         }
         let method_name = i.sig.ident.to_string();
         #[cfg(debug_assertions)]
-        println!("#newrelic_trace# rewriting for method name: {}", method_name);
+        println!(
+            "#newrelic_trace# rewriting for method name: {}",
+            method_name
+        );
         let mut i = i;
-        i.block = NewRelicTrace::rewrite_block(&self.app_name,&self.license_key,method_name, i.block);
+        i.block =
+            NewRelicTrace::rewrite_block(&self.app_name, &self.license_key, method_name, i.block);
         i
     }
 }

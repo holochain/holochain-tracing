@@ -22,21 +22,17 @@ impl Autotrace {
 }
 
 impl Autotrace {
-    fn rewrite_block(
-        name: String,
-        block: syn::Block,
-    ) -> syn::Block {
-        let new_block = 
-                quote! {
-                {
+    fn rewrite_block(name: String, block: syn::Block) -> syn::Block {
+        let new_block = quote! {
+        {
 
 
-                        let __autotrace_guard = ::holochain_tracing::push_span_with(
-                            |span| span.child(#name)
-                        );
-                        #block
-                    }
-                };
+                let __autotrace_guard = ::holochain_tracing::push_span_with(
+                    |span| span.child(#name)
+                );
+                #block
+            }
+        };
         syn::parse(TokenStream::from(new_block))
             .expect("Couldn't parse statement when rewriting block")
     }
@@ -86,10 +82,7 @@ impl syn::fold::Fold for Autotrace {
         if DEBUG_OUTPUT {
             println!("#autotrace# fold fn: {}", func_name);
         }
-        i.block = Box::new(Autotrace::rewrite_block(
-            func_name,
-            *i.block,
-        ));
+        i.block = Box::new(Autotrace::rewrite_block(func_name, *i.block));
         i
     }
 

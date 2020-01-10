@@ -8,9 +8,9 @@ mod autotrace;
 mod newrelic_trace;
 
 use autotrace::Autotrace;
+use newrelic_trace::NewRelicTrace;
 use proc_macro::TokenStream;
 use quote::quote;
-use newrelic_trace::NewRelicTrace;
 
 #[proc_macro_attribute]
 pub fn autotrace(_attr: TokenStream, code: TokenStream) -> TokenStream {
@@ -18,7 +18,6 @@ pub fn autotrace(_attr: TokenStream, code: TokenStream) -> TokenStream {
     let output = syn::fold::fold_item(&mut at, syn::parse(code).unwrap());
     TokenStream::from(quote! {#output})
 }
-
 
 #[proc_macro_attribute]
 pub fn newrelic_autotrace(attr: TokenStream, code: TokenStream) -> TokenStream {
