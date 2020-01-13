@@ -28,7 +28,7 @@ impl NewRelicTrace {
                 {
                     //if new relic is somehow down or the daemon is not running, the program should continue normally
                     //stated away from combinators because of closure ownership
-                    if let Ok(license_key) = std::env::var("NEW_RELICE_LICENSE_KEY")
+                    if let Ok(license_key) = std::env::var("NEW_RELIC_LICENSE_KEY")
                     {
                         if let Ok(live_app) = newrelic::App::new(#app_name, &license_key)
                         {
