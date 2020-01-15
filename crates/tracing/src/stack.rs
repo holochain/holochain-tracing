@@ -40,7 +40,6 @@ lazy_static! {
 struct SpanStack(Vec<Rc<Span>>);
 
 impl SpanStack {
-
     fn push_span(&mut self, span: Rc<Span>) {
         self.0.push(span);
     }

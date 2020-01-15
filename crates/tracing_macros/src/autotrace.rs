@@ -1,3 +1,4 @@
+extern crate newrelic;
 use proc_macro::TokenStream;
 use quote::quote;
 use syn::{Attribute, ImplItemMethod, ItemFn};
@@ -5,7 +6,7 @@ use syn::{Attribute, ImplItemMethod, ItemFn};
 const DEBUG_OUTPUT: bool = false;
 
 #[derive(Default)]
-pub(crate) struct Autotrace {}
+pub(crate) struct Autotrace;
 
 impl Autotrace {
     fn is_no_autotrace(&self, i: &[Attribute]) -> bool {
