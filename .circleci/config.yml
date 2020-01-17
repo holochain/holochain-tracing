@@ -15,7 +15,7 @@ jobs:
    - checkout
    - run:
       no_output_timeout: 20m
-      command: nix-shell --run "hc-release-hook-publish 'tracing tracing_macros'"
+      command: nix-shell --run "hn-release-hook-publish 'tracing tracing_macros'"
 
 workflows:
  version: 2.1
