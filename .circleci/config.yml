@@ -1,0 +1,22 @@
+version: 2.1
+
+jobs:
+  deploy-crates:
+   docker:
+    - image: holochain/holonix:latest
+   steps:
+    - checkout
+    - run:
+       no_output_timeout: 20m
+       command: nix-shell --run "hc-release-hook-publish 'tracing tracing_macros'"
+
+ workflows:
+  version: 2.1
+  deploy:
+   jobs:
+    - deploy-crates:
+     filters:
+      branches:
+       ignore: /.*/
+      tags:
+       only: /^v[0-9]+\.[0-9]+\.[0-9]+-alpha[0-9]+$/
