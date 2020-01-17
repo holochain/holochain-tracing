@@ -12,7 +12,8 @@ use std::{borrow::Cow, io::Cursor};
 
 /// Binary representation is exactly 37 bytes, so ideally
 /// we would use a [u8; 37], but this is easier...
-pub type EncodedSpanContext = Vec<u8>;
+#[derive(Deserialize, Serialize, Clone, Debug)]
+pub struct EncodedSpanContext(pub Vec<u8>);
 
 /// An OpenTracing SpanContext is used to send span info across a process
 /// boundary. This is a simple wrapper around that, again with some helper
@@ -54,12 +55,12 @@ impl HSpanContext {
         let mut enc: Vec<u8> = [0; 37].to_vec(); // OpenTracing binary format is 37 bytes
         let mut slice = &mut enc[..];
         SpanContextState::inject_to_binary(&self.0, &mut slice)?;
-        Ok(enc)
+        Ok(EncodedSpanContext(enc))
     }
 
     /// Deserialize from binary format
-    pub fn decode(enc: &EncodedSpanContext) -> Result<Self> {
-        let mut cursor = Cursor::new(enc);
+    pub fn decode(enc: EncodedSpanContext) -> Result<Self> {
+        let mut cursor = Cursor::new(enc.0);
         SpanContextState::extract_from_binary(&mut cursor).map(|x| HSpanContext(x.unwrap()))
     }
 

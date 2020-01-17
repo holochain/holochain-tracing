@@ -9,6 +9,7 @@ use std::cell::RefCell;
 use std::rc::Rc;
 
 use crate::Span;
+use crate::span::NOOP_SPAN;
 
 /// This enum defines how to handle situations where we expect there to be a Span
 /// on the stack, but there is none.
@@ -26,10 +27,6 @@ const MODE: Mode = Mode::Noop;
 
 thread_local! {
     static SPANSTACK: RefCell<SpanStack> = RefCell::new(SpanStack::default());
-}
-
-lazy_static! {
-    static ref NOOP_SPAN: Span = Span::noop();
 }
 
 /// Internal representation of a stack of Rc<Span>
@@ -117,6 +114,24 @@ pub fn push_span_with<F: FnOnce(&Span) -> Span>(f: F) -> Option<SpanStackGuard> 
 pub fn with_top<A, F: FnOnce(Option<&Span>) -> Option<A>>(f: F) -> Option<A> {
     SPANSTACK.with(|stack| f(stack.borrow().top()))
 }
+
+/// If the stack is not empty, return the top item, else return None
+pub fn with_top_or_null<A, F: FnOnce(&Span) -> A>(f: F) -> A {
+    SPANSTACK.with(|stack| f(stack.borrow().top().unwrap_or_else(||{
+        handle_empty_stack("Using with_top but the span stack is empty! Using noop span.");
+        &NOOP_SPAN
+    })))
+}
+
+
+/// If the stack is not empty, return the top item, else return None
+pub fn top_follower<S: Into<std::borrow::Cow<'static, str>>>(name: S) -> Span {
+    SPANSTACK.with(|stack| stack.borrow().top().map(|s| s.follower(name)).unwrap_or_else(||{
+        handle_empty_stack("Using with_top but the span stack is empty! Using noop span.");
+        NOOP_SPAN.follower("noop")
+    }))
+}
+
 
 pub fn is_empty() -> bool {
     SPANSTACK.with(|stack| stack.borrow().is_empty())

@@ -17,9 +17,11 @@ path = "bin/test_network_reporter.rs"
 
 [dependencies]
 crossbeam-channel = "=0.3.8"
-lazy_static = "=1.4.0"
+lazy_static = "=1.2.0"
 rustracing = "=0.2.1"
 rustracing_jaeger = "=0.2.1"
-shrinkwraprs = "0.2.1"
+shrinkwraprs = "0.3.0"
 log = "0.4.8"
 backtrace = "0.3.27"
+serde = "=1.0.89"
+serde_derive = "=1.0.89"
