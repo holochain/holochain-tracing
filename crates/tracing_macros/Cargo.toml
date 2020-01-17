@@ -20,6 +20,6 @@ syn = { version = "1.0.8", features = ["full", "fold"] }
 quote = "1.0.2"
 crossbeam-channel = "=0.3.8"
 log = "0.4.8"
-newrelic = "0.2"
+newrelic = {version = "0.2", optional = true}
 
 [dev-dependencies]

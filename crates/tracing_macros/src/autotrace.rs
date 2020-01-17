@@ -1,4 +1,3 @@
-extern crate newrelic;
 use proc_macro::TokenStream;
 use quote::quote;
 use syn::{Attribute, ImplItemMethod, ItemFn};
