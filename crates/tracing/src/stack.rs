@@ -8,8 +8,8 @@
 use std::cell::RefCell;
 use std::rc::Rc;
 
+use crate::span;
 use crate::Span;
-use crate::span::NOOP_SPAN;
 
 /// This enum defines how to handle situations where we expect there to be a Span
 /// on the stack, but there is none.
@@ -34,23 +34,32 @@ thread_local! {
 /// it would be a shame if these Rc's were to leak out, destroying the guarantees
 /// of the span stack.
 #[derive(Default)]
-struct SpanStack(Vec<Rc<Span>>);
+struct SpanStack {
+    previous: Vec<Rc<Span>>,
+    top: Option<Span>,
+}
 
 impl SpanStack {
-    fn push_span(&mut self, span: Rc<Span>) {
-        self.0.push(span);
+    fn push_span(&mut self, span: Span) {
+        self.top
+            .replace(span)
+            .map(|prev| self.previous.push(Rc::new(prev)));
     }
 
     fn pop(&mut self) {
-        let _ = self.0.pop();
+        self.top = self.previous.pop()
     }
 
-    fn top(&self) -> Option<&Span> {
-        self.0.last().map(|s| (*s).as_ref())
+    fn top(&mut self) -> Option<&mut Span> {
+        self.top.as_mut()
     }
 
     fn is_empty(&self) -> bool {
-        self.0.is_empty()
+        self.top.is_none()
+    }
+
+    fn len(&self) -> usize {
+        self.previous.len() + self.top.as_ref().map(|_| 1).unwrap_or(0)
     }
 }
 
@@ -66,11 +75,10 @@ pub struct SpanStackGuard {
 
 impl SpanStackGuard {
     pub fn new(span: Span) -> Self {
-        let span = Rc::new(span);
         let _spans = SPANSTACK.with(|stack| {
             let mut stack = stack.borrow_mut();
-            stack.push_span(span.clone());
-            stack.0.clone()
+            stack.push_span(span);
+            stack.previous.clone()
         });
         Self { _spans }
     }
@@ -100,9 +108,9 @@ pub fn push_span(span: Span) -> SpanStackGuard {
 
 /// Applies a function to the top of the span stack and pushes the value onto the stack.
 /// If the stack is empty, the function will not be executed and None will be returned.
-pub fn push_span_with<F: FnOnce(&Span) -> Span>(f: F) -> Option<SpanStackGuard> {
+pub fn push_span_with<F: FnOnce(&mut Span) -> Span>(f: F) -> Option<SpanStackGuard> {
     let maybe_guard = SPANSTACK
-        .with(|stack| stack.borrow().top().map(f))
+        .with(|stack| stack.borrow_mut().top().map(f))
         .map(SpanStackGuard::new);
     if maybe_guard.is_none() {
         handle_empty_stack("Using push_span_with but the span stack is empty! Using noop span.");
@@ -111,27 +119,36 @@ pub fn push_span_with<F: FnOnce(&Span) -> Span>(f: F) -> Option<SpanStackGuard> 
 }
 
 /// If the stack is not empty, return the top item, else return None
-pub fn with_top<A, F: FnOnce(Option<&Span>) -> Option<A>>(f: F) -> Option<A> {
-    SPANSTACK.with(|stack| f(stack.borrow().top()))
+pub fn with_top<A, F: FnOnce(&mut Span) -> A>(f: F) -> Option<A> {
+    SPANSTACK.with(|stack| stack.borrow_mut().top().map(f))
 }
 
 /// If the stack is not empty, return the top item, else return None
-pub fn with_top_or_null<A, F: FnOnce(&Span) -> A>(f: F) -> A {
-    SPANSTACK.with(|stack| f(stack.borrow().top().unwrap_or_else(||{
-        handle_empty_stack("Using with_top but the span stack is empty! Using noop span.");
-        &NOOP_SPAN
-    })))
+pub fn with_top_or_null<A, F: FnOnce(&mut Span) -> A>(f: F) -> A {
+    SPANSTACK.with(|stack| {
+        match stack.borrow_mut().top() {
+            Some(top) => f(top),
+            None => {
+                handle_empty_stack("Using with_top but the span stack is empty! Using noop span.");
+                f(&mut Span::noop())
+            }
+        }
+    })
 }
-
 
 /// If the stack is not empty, return the top item, else return None
 pub fn top_follower<S: Into<std::borrow::Cow<'static, str>>>(name: S) -> Span {
-    SPANSTACK.with(|stack| stack.borrow().top().map(|s| s.follower(name)).unwrap_or_else(||{
-        handle_empty_stack("Using with_top but the span stack is empty! Using noop span.");
-        NOOP_SPAN.follower("noop")
-    }))
+    SPANSTACK.with(|stack| {
+        stack
+            .borrow_mut()
+            .top()
+            .map(|s| s.follower(name))
+            .unwrap_or_else(|| {
+                handle_empty_stack("Using with_top but the span stack is empty! Using noop span.");
+                span::NOOP_SPAN.follower("noop")
+            })
+    })
 }
-
 
 pub fn is_empty() -> bool {
     SPANSTACK.with(|stack| stack.borrow().is_empty())
@@ -144,21 +161,21 @@ mod tests {
 
     #[test]
     fn test_push() {
-        SPANSTACK.with(|stack| assert_eq!(stack.borrow().0.len(), 0));
+        SPANSTACK.with(|stack| assert_eq!(stack.borrow().len(), 0));
         {
             let _g0 = push_span(Span::noop());
-            SPANSTACK.with(|stack| assert_eq!(stack.borrow().0.len(), 1));
+            SPANSTACK.with(|stack| assert_eq!(stack.borrow().len(), 1));
             {
                 let _g1 = push_span_with(|s| s.child("1"));
-                SPANSTACK.with(|stack| assert_eq!(stack.borrow().0.len(), 2));
+                SPANSTACK.with(|stack| assert_eq!(stack.borrow().len(), 2));
                 {
                     let _g2 = push_span_with(|s| s.child("2"));
-                    SPANSTACK.with(|stack| assert_eq!(stack.borrow().0.len(), 3));
+                    SPANSTACK.with(|stack| assert_eq!(stack.borrow().len(), 3));
                 }
-                SPANSTACK.with(|stack| assert_eq!(stack.borrow().0.len(), 2));
+                SPANSTACK.with(|stack| assert_eq!(stack.borrow().len(), 2));
             }
-            SPANSTACK.with(|stack| assert_eq!(stack.borrow().0.len(), 1));
+            SPANSTACK.with(|stack| assert_eq!(stack.borrow().len(), 1));
         }
-        SPANSTACK.with(|stack| assert_eq!(stack.borrow().0.len(), 0));
+        SPANSTACK.with(|stack| assert_eq!(stack.borrow().len(), 0));
     }
 }

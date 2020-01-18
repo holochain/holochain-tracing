@@ -39,7 +39,7 @@ mod mods {
     }
 }
 
-
+#[cfg(newrelic)]
 #[newrelic_autotrace(TEST)]
 mod mods_with_new_relic {
     use holochain_tracing_macros::*;

@@ -9,6 +9,7 @@ use std::borrow::Cow;
 
 lazy_static! {
     pub(crate) static ref NOOP_SPAN: HSpan = HSpan::noop();
+    pub(crate) static ref NULL_TRACER: Tracer = Tracer::new(NullSampler).0;
 }
 
 /// A wrapper around a simple rustracing_jaeger::RjSpan, providing some
@@ -98,7 +99,7 @@ impl HSpan {
 
 /// Tracer placeholder (use only as last resort)
 pub fn null_tracer() -> Tracer {
-    Tracer::new(NullSampler).0
+    NULL_TRACER.clone()
 }
 
 /// TODO: use lazy_static / thread_local singleton Tracer

@@ -16,7 +16,9 @@ impl<T> From<cb::Sender<SpanWrap<T>>> for SpanSender<T> {
     }
 }
 
-impl<T: Send + DeserializeOwned + Serialize + Clone> From<cb::Sender<EncodedSpanWrap<T>>> for EncodedSpanSender<T> {
+impl<T: Send + DeserializeOwned + Serialize + Clone> From<cb::Sender<EncodedSpanWrap<T>>>
+    for EncodedSpanSender<T>
+{
     fn from(tx: cb::Sender<EncodedSpanWrap<T>>) -> EncodedSpanSender<T> {
         EncodedSpanSender(tx)
     }
@@ -24,15 +26,14 @@ impl<T: Send + DeserializeOwned + Serialize + Clone> From<cb::Sender<EncodedSpan
 
 impl<T: Send> SpanSender<T> {
     pub fn send_wrapped(&self, v: T) -> Result<(), cb::SendError<SpanWrap<T>>> {
-        let context = with_top(|top| top.and_then(|t| t.context().clone()));
+        let context = with_top(|top| top.context().clone()).flatten();
         self.0.send(SpanWrap::new(v, context))
     }
 }
 
 impl<T: Send + DeserializeOwned + Serialize + Clone> EncodedSpanSender<T> {
     pub fn send_wrapped(&self, v: T) -> Result<(), cb::SendError<EncodedSpanWrap<T>>> {
-        let context =
-            with_top(|top| top.and_then(|t| t.context().clone()));
+        let context = with_top(|top| top.context().clone()).flatten();
         self.0.send(SpanWrap::new(v, context).into())
     }
 }

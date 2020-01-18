@@ -1,4 +1,3 @@
-use serde::de::DeserializeOwned;
 use crate::span::{HSpan, NOOP_SPAN};
 use crate::span_context::EncodedSpanContext;
 use crate::span_context::HSpanContext;
@@ -6,8 +5,9 @@ use rustracing::sampler::*;
 use rustracing::span::StartSpanOptions;
 use rustracing_jaeger::Span as RjSpan;
 use rustracing_jaeger::{span::SpanContextState, Tracer};
+use serde::de::DeserializeOwned;
 // use serde::Deserialize;
-use serde::{Serialize};
+use serde::Serialize;
 use std::borrow::Cow;
 
 /// SpanWrap is a simple way to couple some data along with a struct. It is
@@ -84,16 +84,18 @@ impl<T: std::fmt::Debug> std::fmt::Debug for SpanWrap<T> {
 
 #[derive(Serialize, Deserialize, Clone)]
 pub struct EncodedSpanWrap<T>
-where T: Serialize + DeserializeOwned + Clone {
-
+where
+    T: Serialize + DeserializeOwned + Clone,
+{
     #[serde(bound(deserialize = "T: DeserializeOwned"))]
     pub data: T,
     pub span_context: Option<EncodedSpanContext>,
 }
 
-
 impl<T> EncodedSpanWrap<T>
-where T: Serialize + DeserializeOwned + Clone {
+where
+    T: Serialize + DeserializeOwned + Clone,
+{
     /// Map the data field to a new value while keeping the same span_context
     pub fn map<F, U>(self, f: F) -> EncodedSpanWrap<U>
     where
@@ -119,8 +121,9 @@ where T: Serialize + DeserializeOwned + Clone {
 }
 
 impl<'a, T> From<SpanWrap<T>> for EncodedSpanWrap<T>
-where T: Serialize + DeserializeOwned + Clone {
-
+where
+    T: Serialize + DeserializeOwned + Clone,
+{
     fn from(sw: SpanWrap<T>) -> Self {
         Self {
             data: sw.data,
@@ -136,8 +139,9 @@ where T: Serialize + DeserializeOwned + Clone {
 }
 
 impl<'a, T> From<EncodedSpanWrap<T>> for SpanWrap<T>
-where T: Serialize + DeserializeOwned + Clone {
-
+where
+    T: Serialize + DeserializeOwned + Clone,
+{
     fn from(swe: EncodedSpanWrap<T>) -> Self {
         Self {
             data: swe.data,
@@ -153,12 +157,13 @@ where T: Serialize + DeserializeOwned + Clone {
 }
 
 impl<'a, T> std::fmt::Debug for EncodedSpanWrap<T>
-where T: Serialize + DeserializeOwned + Clone + std::fmt::Debug {
+where
+    T: Serialize + DeserializeOwned + Clone + std::fmt::Debug,
+{
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(f, "SpanWrap({:?}, {:?})", self.data, self.span_context)
     }
 }
-
 
 // impl<T> TryFrom<SpanWrap<T>> for EncodedSpanWrap<T>
 // where T: Serialize + Deserialize + Clone {
