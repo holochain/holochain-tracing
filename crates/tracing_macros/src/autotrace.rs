@@ -73,7 +73,7 @@ impl syn::fold::Fold for Autotrace {
         if i.sig.constness.is_some() || self.is_no_autotrace(&i.attrs) {
             return i;
         }
-        let func_name = format!("{} (autotrace)", i.sig.ident.to_string());
+        let func_name = format!("{} (auto:fn)", i.sig.ident);
         let mut i = i;
         if DEBUG_OUTPUT {
             println!("#autotrace# fold fn: {}", func_name);
@@ -86,7 +86,7 @@ impl syn::fold::Fold for Autotrace {
         if i.sig.constness.is_some() || self.is_no_autotrace(&i.attrs) {
             return i;
         }
-        let method_name = i.sig.ident.to_string();
+        let method_name = format!("{} (auto:method)", i.sig.ident);
         let mut i = i;
         if DEBUG_OUTPUT {
             println!("#autotrace# fold method: {}", method_name);

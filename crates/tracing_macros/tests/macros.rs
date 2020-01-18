@@ -95,7 +95,7 @@ fn function_attr() {
         .take(num)
         .map(|s| s.operation_name().to_owned())
         .collect();
-    assert_eq!(names, vec!["c", "b", "a", "root"]);
+    assert_eq!(names, vec!["c (auto:fn)", "b (auto:fn)", "a (auto:fn)", "root"]);
 }
 
 #[test]
@@ -115,7 +115,7 @@ fn module_attr() {
         .take(num)
         .map(|s| s.operation_name().to_owned())
         .collect();
-    assert_eq!(names, vec!["f", "e", "d", "root"]);
+    assert_eq!(names, vec!["f (auto:fn)", "e (auto:fn)", "d (auto:fn)", "root"]);
 }
 
 #[test]
@@ -136,7 +136,7 @@ fn method_attr() {
         .take(num)
         .map(|s| s.operation_name().to_owned())
         .collect();
-    assert_eq!(names, vec!["i", "h", "g", "root"]);
+    assert_eq!(names, vec!["i (auto:method)", "h (auto:fn)", "g (auto:method)", "root"]);
 }
 
 // #[test]
