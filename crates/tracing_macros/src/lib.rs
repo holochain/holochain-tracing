@@ -5,11 +5,9 @@ extern crate quote;
 extern crate syn;
 
 mod autotrace;
-#[cfg(newrelic)]
 mod newrelic_trace;
 
 use autotrace::Autotrace;
-#[cfg(newrelic)]
 use newrelic_trace::NewRelicTrace;
 use proc_macro::TokenStream;
 use quote::quote;
@@ -21,7 +19,6 @@ pub fn autotrace(_attr: TokenStream, code: TokenStream) -> TokenStream {
     TokenStream::from(quote! {#output})
 }
 
-#[cfg(newrelic)]
 #[proc_macro_attribute]
 pub fn newrelic_autotrace(attr: TokenStream, code: TokenStream) -> TokenStream {
     let mut new_relic = NewRelicTrace::new(attr);
