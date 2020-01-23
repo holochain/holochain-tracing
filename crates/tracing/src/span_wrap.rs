@@ -1,10 +1,9 @@
-use crate::span::{HSpan, NOOP_SPAN};
-use crate::span_context::EncodedSpanContext;
-use crate::span_context::HSpanContext;
-use rustracing::sampler::*;
-use rustracing::span::StartSpanOptions;
-use rustracing_jaeger::Span as RjSpan;
-use rustracing_jaeger::{span::SpanContextState, Tracer};
+use crate::{
+    span::{HSpan, NOOP_SPAN, test_span},
+    span_context::{EncodedSpanContext, HSpanContext},
+};
+use rustracing::{sampler::*, span::StartSpanOptions};
+use rustracing_jaeger::{span::SpanContextState, Span as RjSpan, Tracer};
 use serde::de::DeserializeOwned;
 // use serde::Deserialize;
 use serde::Serialize;
@@ -79,6 +78,12 @@ impl<T> SpanWrap<T> {
 impl<T: std::fmt::Debug> std::fmt::Debug for SpanWrap<T> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(f, "SpanWrap({:?}, {:?})", self.data, self.span_context)
+    }
+}
+
+impl<T: PartialEq> PartialEq for SpanWrap<T> {
+    fn eq(&self, other: &Self) -> bool {
+        self.data == other.data
     }
 }
 
@@ -163,6 +168,24 @@ where
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(f, "SpanWrap({:?}, {:?})", self.data, self.span_context)
     }
+}
+
+impl<T> PartialEq for EncodedSpanWrap<T>
+where
+    T: Serialize + DeserializeOwned + Clone + PartialEq,
+{
+    fn eq(&self, other: &Self) -> bool {
+        self.data == other.data
+    }
+}
+
+
+pub fn test_wrap<T>(t: T) -> SpanWrap<T> {
+    test_span().wrap(t)
+}
+
+pub fn test_wrap_enc<T: Serialize + DeserializeOwned + Clone>(t: T) -> EncodedSpanWrap<T> {
+    test_span().wrap(t).into()
 }
 
 // impl<T> TryFrom<SpanWrap<T>> for EncodedSpanWrap<T>

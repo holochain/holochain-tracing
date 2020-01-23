@@ -25,6 +25,6 @@ pub use rustracing::{sampler::*, tag::Tag};
 pub use rustracing_jaeger::{reporter, Tracer, span::FinishedSpan};
 pub use span::{null_tracer, test_span, HSpan as Span, noop};
 pub use span_context::{EncodedSpanContext, HSpanContext as SpanContext};
-pub use span_wrap::{SpanWrap, EncodedSpanWrap};
+pub use span_wrap::{SpanWrap, EncodedSpanWrap, test_wrap, test_wrap_enc};
 pub use stack::{is_empty, push_span, push_span_with, with_top, with_top_or_null, top_follower};
 pub use tag::debug_tag;

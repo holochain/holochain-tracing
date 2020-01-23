@@ -85,7 +85,7 @@ impl HSpan {
     /// perhaps requiring some restructuring of the underlying code to make
     /// hookup possible.
     pub fn todo(reason: &'static str) -> Self {
-        noop(format!("TODO: {}", reason))
+        noop(&format!("TODO: {}", reason))
     }
 
     /// Like todo(), but lazier. There is no reason why this span can't be
@@ -103,13 +103,13 @@ pub fn null_tracer() -> Tracer {
 }
 
 /// TODO: use lazy_static / thread_local singleton Tracer
-pub fn noop(name: String) -> HSpan {
-    null_tracer().span(name).start().into()
+pub fn noop(name: &str) -> HSpan {
+    null_tracer().span(name.to_string()).start().into()
 }
 
 /// Dummy span, useful for tests that don't test tracing
-pub fn test_span(name: &str) -> HSpan {
-    noop(name.into())
+pub fn test_span() -> HSpan {
+    noop("noop test span")
 }
 
 #[cfg(test)]
