@@ -1,4 +1,4 @@
-use crate::{Reporter, Tracer};
+use crate::{reporter, Tracer};
 use std::thread;
 
 pub use rustracing::{sampler::*, span::SpanReceiver};
@@ -6,7 +6,7 @@ pub use rustracing_jaeger::{span::SpanContextState as RjSpanContextState, Span a
 
 fn run_reporter_thread(service_name: &'static str, span_rx: SpanReceiver<RjSpanContextState>) {
     thread::spawn(move || {
-        let reporter = Reporter::new(service_name).unwrap();
+        let reporter = reporter::JaegerCompactReporter::new(service_name).unwrap();
         for span in span_rx {
             reporter.report(&[span]).expect("could not report");
         }

@@ -68,6 +68,7 @@ impl SpanStack {
         self.stack.is_empty()
     }
 
+    #[allow(dead_code)]
     fn len(&self) -> usize {
         self.stack.len()
     }

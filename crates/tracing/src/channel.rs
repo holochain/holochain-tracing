@@ -24,16 +24,22 @@ impl<T: Send + DeserializeOwned + Serialize + Clone> From<cb::Sender<EncodedSpan
     }
 }
 
-impl<T: Send> SpanSender<T> {
+impl<T: Send + std::fmt::Debug> SpanSender<T> {
     pub fn send_wrapped(&self, v: T) -> Result<(), cb::SendError<SpanWrap<T>>> {
-        let context = with_top(|top| top.context().clone()).flatten();
+        let context = with_top(|top| {
+            top.event(format!("SpanSender::send_wrapped: {:?}", v));
+            top.context().clone()
+        }).flatten();
         self.0.send(SpanWrap::new(v, context))
     }
 }
 
-impl<T: Send + DeserializeOwned + Serialize + Clone> EncodedSpanSender<T> {
+impl<T: Send + std::fmt::Debug + DeserializeOwned + Serialize + Clone> EncodedSpanSender<T> {
     pub fn send_wrapped(&self, v: T) -> Result<(), cb::SendError<EncodedSpanWrap<T>>> {
-        let context = with_top(|top| top.context().clone()).flatten();
+        let context = with_top(|top| {
+            top.event(format!("EncodedSpanSender::send_wrapped: {:?}", v));
+            top.context().clone()
+        }).flatten();
         self.0.send(SpanWrap::new(v, context).into())
     }
 }
