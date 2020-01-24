@@ -112,7 +112,7 @@ dependencies = [
 
 [[package]]
 name = "holochain_tracing"
-version = "0.0.13"
+version = "0.0.14"
 dependencies = [
  "backtrace 0.3.42 (registry+https://github.com/rust-lang/crates.io-index)",
  "crossbeam-channel 0.3.8 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -127,10 +127,10 @@ dependencies = [
 
 [[package]]
 name = "holochain_tracing_macros"
-version = "0.0.13"
+version = "0.0.14"
 dependencies = [
  "crossbeam-channel 0.3.8 (registry+https://github.com/rust-lang/crates.io-index)",
- "holochain_tracing 0.0.13",
+ "holochain_tracing 0.0.14",
  "log 0.4.8 (registry+https://github.com/rust-lang/crates.io-index)",
  "newrelic 0.2.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "quote 1.0.2 (registry+https://github.com/rust-lang/crates.io-index)",

@@ -23,7 +23,7 @@ impl NewRelicTrace {
         name: String,
         block: syn::Block,
     ) -> syn::Block {
-        let new_block = 
+        let new_block =
                 quote! {
                 {
                     //if new relic is somehow down or the daemon is not running, the program should continue normally
@@ -32,7 +32,7 @@ impl NewRelicTrace {
                     {
                         if let Ok(live_app) = newrelic::App::new(#app_name, &license_key)
                         {
-                            if let Ok(transaction) = live_app.non_web_transaction(#name)
+                            if let Ok(_transaction) = live_app.non_web_transaction(#name)
                             {
                                 #block
                             }
@@ -50,7 +50,7 @@ impl NewRelicTrace {
                     {
                         #block
                     }
-                    
+
                 }};
         syn::parse(TokenStream::from(new_block))
             .expect("Couldn't parse statement when rewriting block")
