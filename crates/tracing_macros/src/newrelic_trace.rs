@@ -3,7 +3,7 @@ use quote::quote;
 use syn::{ImplItemMethod, ItemFn};
 
 pub(crate) struct NewRelicTrace {
-    app_name: String
+    app_name: String,
 }
 
 impl NewRelicTrace {
@@ -13,45 +13,39 @@ impl NewRelicTrace {
             .next()
             .map(|token| token.to_string())
             .unwrap_or("UNDEFINED".to_string());
-        Self {
-            app_name
-        }
+
+        Self { app_name }
     }
 
-    fn rewrite_block(
-        app_name: &String,
-        name: String,
-        block: syn::Block,
-    ) -> syn::Block {
-        let new_block = 
-                quote! {
+    fn rewrite_block(app_name: &String, name: String, block: syn::Block) -> syn::Block {
+        let new_block = quote! {
+        {
+            //if new relic is somehow down or the daemon is not running, the program should continue normally
+            //stated away from combinators because of closure ownership
+            if let Some(license_key) = &*NEW_RELIC_LICENSE_KEY
+            {
+                if let Ok(live_app) = newrelic::App::new(#app_name, &license_key)
                 {
-                    //if new relic is somehow down or the daemon is not running, the program should continue normally
-                    //stated away from combinators because of closure ownership
-                    if let Ok(license_key) = std::env::var("NEW_RELIC_LICENSE_KEY")
+                    if let Ok(transaction) = live_app.non_web_transaction(#name)
                     {
-                        if let Ok(live_app) = newrelic::App::new(#app_name, &license_key)
-                        {
-                            if let Ok(transaction) = live_app.non_web_transaction(#name)
-                            {
-                                #block
-                            }
-                            else
-                            {
-                                #block
-                            }
-                        }
-                        else
-                        {
-                            #block
-                        }
+                        #block
                     }
                     else
                     {
                         #block
                     }
-                    
-                }};
+                }
+                else
+                {
+                    #block
+                }
+            }
+            else
+            {
+                #block
+            }
+
+        }};
         syn::parse(TokenStream::from(new_block))
             .expect("Couldn't parse statement when rewriting block")
     }
@@ -94,8 +88,7 @@ impl syn::fold::Fold for NewRelicTrace {
             method_name
         );
         let mut i = i;
-        i.block =
-            NewRelicTrace::rewrite_block(&self.app_name,method_name, i.block);
+        i.block = NewRelicTrace::rewrite_block(&self.app_name, method_name, i.block);
         i
     }
 }
