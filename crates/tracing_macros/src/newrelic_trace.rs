@@ -26,7 +26,7 @@ impl NewRelicTrace {
             {
                 if let Ok(live_app) = newrelic::App::new(#app_name, &license_key)
                 {
-                    if let Ok(transaction) = live_app.non_web_transaction(#name)
+                    if let Ok(_transaction) = live_app.non_web_transaction(#name)
                     {
                         #block
                     }
