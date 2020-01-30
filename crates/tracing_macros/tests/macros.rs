@@ -5,7 +5,6 @@ use holochain_tracing as ht;
 use holochain_tracing_macros::*;
 
 // mod submod;
-
 mod funcs {
     use holochain_tracing_macros::*;
 
@@ -39,14 +38,16 @@ mod mods {
     }
 }
 
+//new relic trace for optimization wont work until new_relic_license_key is in scope
 #[newrelic_autotrace(TEST)]
 mod mods_with_new_relic {
-    use holochain_tracing_macros::*;
-
+    use lazy_static::lazy_static;
+    lazy_static! {
+        static ref NEW_RELIC_LICENSE_KEY: Option<String> = Some("1234".to_string());
+    }
     pub fn d(x: u32) -> u32 {
         e(x) * 10
     }
-    #[autotrace]
     pub fn e(x: u32) -> u32 {
         f(x) * 2
     }
