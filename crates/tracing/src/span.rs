@@ -44,17 +44,17 @@ impl HSpan {
     }
 
     /// Renaming of underlying `child` method
-    pub fn child_<'a, N: Into<Cow<'static, str>>, F>(&'a self, operation_name: N, f: F) -> RjSpan
+    pub fn child_<N: Into<Cow<'static, str>>, F>(&self, operation_name: N, f: F) -> RjSpan
     where
-        F: FnOnce(StartSpanOptions<'_, AllSampler, SpanContextState>) -> RjSpan,
+        F: FnOnce(StartSpanOptions<AllSampler, SpanContextState>) -> RjSpan,
     {
         self.0.child(operation_name, f)
     }
 
     /// Renaming of underlying `follow` method
-    pub fn follower_<'a, N: Into<Cow<'static, str>>, F>(&'a self, operation_name: N, f: F) -> RjSpan
+    pub fn follower_<N: Into<Cow<'static, str>>, F>(&self, operation_name: N, f: F) -> RjSpan
     where
-        F: FnOnce(StartSpanOptions<'_, AllSampler, SpanContextState>) -> RjSpan,
+        F: FnOnce(StartSpanOptions<AllSampler, SpanContextState>) -> RjSpan,
     {
         self.0.follower(operation_name, f)
     }
@@ -77,7 +77,7 @@ impl HSpan {
     /// e.g. for times when a function requires a RjSpan but we don't desire to actually
     /// instrument that function call.
     pub fn noop() -> Self {
-        noop("no-op, intentionally disconnected RjSpan".into())
+        noop("no-op, intentionally disconnected RjSpan")
     }
 
     /// Useful for retrofitting existing codebases with traces. This is a noop,
@@ -92,7 +92,7 @@ impl HSpan {
     /// hooked up other than lack of programmer time. This signals that
     /// it'll be simple to hook up whenever you get around it.
     pub fn fixme() -> Self {
-        noop("not yet hooked up".into())
+        noop("not yet hooked up")
     }
 }
 

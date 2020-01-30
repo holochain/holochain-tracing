@@ -12,7 +12,7 @@ impl NewRelicTrace {
             .into_iter()
             .next()
             .map(|token| token.to_string())
-            .unwrap_or("UNDEFINED".to_string());
+            .unwrap_or_else(|| "UNDEFINED".to_string());
         Self {
             app_name
         }

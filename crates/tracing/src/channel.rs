@@ -28,7 +28,7 @@ impl<T: Send + std::fmt::Debug> SpanSender<T> {
     pub fn send_wrapped(&self, v: T) -> Result<(), cb::SendError<SpanWrap<T>>> {
         let context = with_top(|top| {
             top.event(format!("SpanSender::send_wrapped: {:?}", v));
-            top.context().clone()
+            top.context()
         }).flatten();
         self.0.send(SpanWrap::new(v, context))
     }
@@ -38,7 +38,7 @@ impl<T: Send + std::fmt::Debug + DeserializeOwned + Serialize + Clone> EncodedSp
     pub fn send_wrapped(&self, v: T) -> Result<(), cb::SendError<EncodedSpanWrap<T>>> {
         let context = with_top(|top| {
             top.event(format!("EncodedSpanSender::send_wrapped: {:?}", v));
-            top.context().clone()
+            top.context()
         }).flatten();
         self.0.send(SpanWrap::new(v, context).into())
     }

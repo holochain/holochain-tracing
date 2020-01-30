@@ -136,7 +136,7 @@ fn print_span_map(span_map: &SpanMap, only_events: bool) {
             match span_ref {
                 ChildOf(parent) => {
                     let maybe_children_tree = children_map.remove(&parent.span_id());
-                    let mut children_tree = maybe_children_tree.unwrap_or(BTreeMap::new());
+                    let mut children_tree: BTreeMap<_, _> = maybe_children_tree.unwrap_or_default();
                     let maybe_entry = children_tree.get(&span.start_time());
                     let mut span_id_list = maybe_entry.unwrap_or(&Vec::new()).to_vec();
                     span_id_list.push(*span_id);
@@ -146,7 +146,7 @@ fn print_span_map(span_map: &SpanMap, only_events: bool) {
                 }
                 FollowsFrom(sibling) => {
                     let maybe_sibling_tree = sibling_map.remove(&sibling.span_id());
-                    let mut sibling_tree = maybe_sibling_tree.unwrap_or(BTreeMap::new());
+                    let mut sibling_tree: BTreeMap<_, _> = maybe_sibling_tree.unwrap_or_default();
                     let maybe_entry = sibling_tree.get(&span_offset);
                     let mut span_id_list = maybe_entry.unwrap_or(&Vec::new()).to_vec();
                     span_id_list.push(*span_id);
