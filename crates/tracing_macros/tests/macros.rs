@@ -5,7 +5,6 @@ use holochain_tracing as ht;
 use holochain_tracing_macros::*;
 
 // mod submod;
-
 mod funcs {
     use holochain_tracing_macros::*;
 
@@ -39,15 +38,16 @@ mod mods {
     }
 }
 
-
+//new relic trace for optimization wont work until new_relic_license_key is in scope
 #[newrelic_autotrace(TEST)]
 mod mods_with_new_relic {
-    use holochain_tracing_macros::*;
-
+    use lazy_static::lazy_static;
+    lazy_static! {
+        static ref NEW_RELIC_LICENSE_KEY: Option<String> = Some("1234".to_string());
+    }
     pub fn d(x: u32) -> u32 {
         e(x) * 10
     }
-    #[autotrace]
     pub fn e(x: u32) -> u32 {
         f(x) * 2
     }
@@ -95,7 +95,7 @@ fn function_attr() {
         .take(num)
         .map(|s| s.operation_name().to_owned())
         .collect();
-    assert_eq!(names, vec!["c", "b", "a", "root"]);
+    assert_eq!(names, vec!["c (auto:fn)", "b (auto:fn)", "a (auto:fn)", "root"]);
 }
 
 #[test]
@@ -115,7 +115,7 @@ fn module_attr() {
         .take(num)
         .map(|s| s.operation_name().to_owned())
         .collect();
-    assert_eq!(names, vec!["f", "e", "d", "root"]);
+    assert_eq!(names, vec!["f (auto:fn)", "e (auto:fn)", "d (auto:fn)", "root"]);
 }
 
 #[test]
@@ -136,7 +136,7 @@ fn method_attr() {
         .take(num)
         .map(|s| s.operation_name().to_owned())
         .collect();
-    assert_eq!(names, vec!["i", "h", "g", "root"]);
+    assert_eq!(names, vec!["i (auto:method)", "h (auto:fn)", "g (auto:method)", "root"]);
 }
 
 // #[test]

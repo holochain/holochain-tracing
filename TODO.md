@@ -1,0 +1,1 @@
+* Make SpanWrap<Vec<u8>> encodable, to enable encoding and sending Opaque messages

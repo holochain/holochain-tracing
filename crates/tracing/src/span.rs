@@ -6,6 +6,12 @@ use rustracing_jaeger::Span as RjSpan;
 use rustracing_jaeger::{span::SpanContextState, Tracer};
 use std::borrow::Cow;
 
+
+lazy_static! {
+    pub(crate) static ref NOOP_SPAN: HSpan = HSpan::noop();
+    pub(crate) static ref NULL_TRACER: Tracer = Tracer::new(NullSampler).0;
+}
+
 /// A wrapper around a simple rustracing_jaeger::RjSpan, providing some
 /// convenience functions.
 /// It overshadows the lower-level `child` and `follower` methods
@@ -38,17 +44,17 @@ impl HSpan {
     }
 
     /// Renaming of underlying `child` method
-    pub fn child_<'a, N: Into<Cow<'static, str>>, F>(&'a self, operation_name: N, f: F) -> RjSpan
+    pub fn child_<N: Into<Cow<'static, str>>, F>(&self, operation_name: N, f: F) -> RjSpan
     where
-        F: FnOnce(StartSpanOptions<'_, AllSampler, SpanContextState>) -> RjSpan,
+        F: FnOnce(StartSpanOptions<AllSampler, SpanContextState>) -> RjSpan,
     {
         self.0.child(operation_name, f)
     }
 
     /// Renaming of underlying `follow` method
-    pub fn follower_<'a, N: Into<Cow<'static, str>>, F>(&'a self, operation_name: N, f: F) -> RjSpan
+    pub fn follower_<N: Into<Cow<'static, str>>, F>(&self, operation_name: N, f: F) -> RjSpan
     where
-        F: FnOnce(StartSpanOptions<'_, AllSampler, SpanContextState>) -> RjSpan,
+        F: FnOnce(StartSpanOptions<AllSampler, SpanContextState>) -> RjSpan,
     {
         self.0.follower(operation_name, f)
     }
@@ -71,7 +77,7 @@ impl HSpan {
     /// e.g. for times when a function requires a RjSpan but we don't desire to actually
     /// instrument that function call.
     pub fn noop() -> Self {
-        noop("no-op, intentionally disconnected RjSpan".into())
+        noop("no-op, intentionally disconnected RjSpan")
     }
 
     /// Useful for retrofitting existing codebases with traces. This is a noop,
@@ -79,30 +85,31 @@ impl HSpan {
     /// perhaps requiring some restructuring of the underlying code to make
     /// hookup possible.
     pub fn todo(reason: &'static str) -> Self {
-        noop(format!("TODO: {}", reason))
+        noop(&format!("TODO: {}", reason))
     }
 
     /// Like todo(), but lazier. There is no reason why this span can't be
     /// hooked up other than lack of programmer time. This signals that
     /// it'll be simple to hook up whenever you get around it.
     pub fn fixme() -> Self {
-        noop("not yet hooked up".into())
+        noop("not yet hooked up")
     }
 }
 
+
 /// Tracer placeholder (use only as last resort)
 pub fn null_tracer() -> Tracer {
-    Tracer::new(NullSampler).0
+    NULL_TRACER.clone()
 }
 
 /// TODO: use lazy_static / thread_local singleton Tracer
-fn noop(name: String) -> HSpan {
-    null_tracer().span(name).start().into()
+pub fn noop(name: &str) -> HSpan {
+    null_tracer().span(name.to_string()).start().into()
 }
 
 /// Dummy span, useful for tests that don't test tracing
-pub fn test_span(name: &str) -> HSpan {
-    noop(name.into())
+pub fn test_span() -> HSpan {
+    noop("noop test span")
 }
 
 #[cfg(test)]

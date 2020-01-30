@@ -1,6 +1,6 @@
 [package]
 name = "holochain_tracing_macros"
-version = "0.0.13"
+version = "0.0.14"
 authors = ["Holochain Core Dev Team <devcore@holochain.org>"]
 edition = "2018"
 description = "abstraction for distributed tracing choices"
@@ -15,11 +15,13 @@ repository = "https://github.com/holochain/holochain-tracing"
 proc-macro = true
 
 [dependencies]
-holochain_tracing = { version = "=0.0.13", path = "../tracing"}
+holochain_tracing = { version = "=0.0.14", path = "../tracing"}
 syn = { version = "1.0.8", features = ["full", "fold"] }
 quote = "1.0.2"
 crossbeam-channel = "=0.3.8"
 log = "0.4.8"
 newrelic = "0.2"
+lazy_static = "=1.4.0"
 
 [dev-dependencies]
+
