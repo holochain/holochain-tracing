@@ -22,6 +22,30 @@ impl NewRelicTrace {
         {
             //if new relic is somehow down or the daemon is not running, the program should continue normally
             //stated away from combinators because of closure ownership
+            let _transaction = if let Some(license_key) = &*NEW_RELIC_LICENSE_KEY
+            {
+                if let Ok(live_app) = newrelic::App::new(#app_name, &license_key)
+                {
+                    if let Ok(_transaction) = live_app.non_web_transaction(#name)
+                    {
+                        Some(_transaction)
+                    }
+                    else
+                    {
+                        None
+                    }
+                }
+                else
+                {
+                    None
+                }
+            }
+            else
+            {
+                None
+            };
+            #block
+            /*
             if let Some(license_key) = &*NEW_RELIC_LICENSE_KEY
             {
                 if let Ok(live_app) = newrelic::App::new(#app_name, &license_key)
@@ -44,6 +68,7 @@ impl NewRelicTrace {
             {
                 #block
             }
+        */
 
         }};
         syn::parse(TokenStream::from(new_block))

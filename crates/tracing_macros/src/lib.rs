@@ -1,3 +1,4 @@
+#![feature(proc_macro_span)]
 extern crate crossbeam_channel;
 extern crate holochain_tracing;
 extern crate proc_macro;

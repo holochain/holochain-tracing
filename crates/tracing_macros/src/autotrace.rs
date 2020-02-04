@@ -1,4 +1,4 @@
-use proc_macro::TokenStream;
+use proc_macro::{TokenStream, Span};
 use quote::quote;
 use syn::{Attribute, ImplItemMethod, ItemFn};
 
@@ -73,7 +73,7 @@ impl syn::fold::Fold for Autotrace {
         if i.sig.constness.is_some() || self.is_no_autotrace(&i.attrs) {
             return i;
         }
-        let func_name = format!("{} (auto:fn)", i.sig.ident);
+        let func_name = format!("{} in {:?}:{:?} (auto:fn)", i.sig.ident, Span::call_site().source_file(), Span::call_site().start());
         let mut i = i;
         if DEBUG_OUTPUT {
             println!("#autotrace# fold fn: {}", func_name);
@@ -86,7 +86,8 @@ impl syn::fold::Fold for Autotrace {
         if i.sig.constness.is_some() || self.is_no_autotrace(&i.attrs) {
             return i;
         }
-        let method_name = format!("{} (auto:method)", i.sig.ident);
+        let method_name = format!("{} in {:?}:{:?} (auto:method)", i.sig.ident, Span::call_site().source_file(), Span::call_site().start());
+        //let method_name = format!("{} (auto:method)", i.sig.ident);
         let mut i = i;
         if DEBUG_OUTPUT {
             println!("#autotrace# fold method: {}", method_name);
