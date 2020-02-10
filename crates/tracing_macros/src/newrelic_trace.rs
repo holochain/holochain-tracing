@@ -45,30 +45,6 @@ impl NewRelicTrace {
                 None
             };
             #block
-            /*
-            if let Some(license_key) = &*NEW_RELIC_LICENSE_KEY
-            {
-                if let Ok(live_app) = newrelic::App::new(#app_name, &license_key)
-                {
-                    if let Ok(_transaction) = live_app.non_web_transaction(#name)
-                    {
-                        #block
-                    }
-                    else
-                    {
-                        #block
-                    }
-                }
-                else
-                {
-                    #block
-                }
-            }
-            else
-            {
-                #block
-            }
-        */
 
         }};
         syn::parse(TokenStream::from(new_block))
