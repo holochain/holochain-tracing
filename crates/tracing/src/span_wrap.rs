@@ -1,5 +1,5 @@
 use crate::{
-    span::{HSpan, NOOP_SPAN, test_span},
+    span::{test_span, HSpan, NOOP_SPAN},
     span_context::{EncodedSpanContext, HSpanContext},
 };
 use rustracing::{sampler::*, span::StartSpanOptions};
@@ -178,7 +178,6 @@ where
         self.data == other.data
     }
 }
-
 
 pub fn test_wrap<T>(t: T) -> SpanWrap<T> {
     test_span().wrap(t)

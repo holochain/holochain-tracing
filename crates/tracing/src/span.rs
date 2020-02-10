@@ -6,7 +6,6 @@ use rustracing_jaeger::Span as RjSpan;
 use rustracing_jaeger::{span::SpanContextState, Tracer};
 use std::borrow::Cow;
 
-
 lazy_static! {
     pub(crate) static ref NOOP_SPAN: HSpan = HSpan::noop();
     pub(crate) static ref NULL_TRACER: Tracer = Tracer::new(NullSampler).0;
@@ -95,7 +94,6 @@ impl HSpan {
         noop("not yet hooked up")
     }
 }
-
 
 /// Tracer placeholder (use only as last resort)
 pub fn null_tracer() -> Tracer {
