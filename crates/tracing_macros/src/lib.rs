@@ -27,6 +27,12 @@ pub fn autotrace_deep(_attr: TokenStream, code: TokenStream) -> TokenStream {
     TokenStream::from(quote! {#output})
 }
 
+#[proc_macro]
+pub fn autotrace_deep_block(code: TokenStream) -> TokenStream {
+    let output = Autotrace::rewrite_deep(syn::parse(code).unwrap());
+    TokenStream::from(quote! {#output})
+}
+
 #[proc_macro_attribute]
 pub fn newrelic_autotrace(attr: TokenStream, code: TokenStream) -> TokenStream {
     let mut new_relic = NewRelicTrace::new(attr);

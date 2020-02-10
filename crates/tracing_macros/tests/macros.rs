@@ -89,7 +89,10 @@ mod methods {
         }
 
         pub fn i(&self, x: u32) -> u32 {
+            autotrace_deep_block!({
+                if false {}
             x + 1
+            })
         }
     }
 }

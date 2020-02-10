@@ -39,7 +39,7 @@ impl Autotrace {
         .expect("Couldn't parse statement when rewriting block")
     }
 
-    fn rewrite_deep(mut block: syn::Block) -> syn::Block {
+    pub(crate) fn rewrite_deep(mut block: syn::Block) -> syn::Block {
         let mut new_statements = vec![];
         for s in block.stmts {
             let span = proc_macro2::Span::from(s.span()).unwrap();
@@ -120,7 +120,7 @@ impl syn::fold::Fold for Autotrace {
         i.block = Box::new(Autotrace::rewrite_block(func_name, *i.block));
         i
     }
-
+    
     fn fold_impl_item_method(&mut self, i: ImplItemMethod) -> ImplItemMethod {
         if i.sig.constness.is_some() || self.is_no_autotrace(&i.attrs) {
             return i;
