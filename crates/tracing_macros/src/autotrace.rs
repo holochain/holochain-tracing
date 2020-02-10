@@ -1,11 +1,14 @@
-use proc_macro::{TokenStream, Span};
+use proc_macro::TokenStream;
 use quote::quote;
+use syn::spanned::Spanned;
 use syn::{Attribute, ImplItemMethod, ItemFn};
 
 const DEBUG_OUTPUT: bool = false;
 
 #[derive(Default)]
-pub(crate) struct Autotrace;
+pub(crate) struct Autotrace {
+    deep: bool,
+}
 
 impl Autotrace {
     fn is_no_autotrace(&self, i: &[Attribute]) -> bool {
@@ -17,6 +20,9 @@ impl Autotrace {
                 false
             }
         })
+    }
+    pub fn deep() -> Self {
+        Autotrace { deep: true }
     }
 }
 
@@ -31,6 +37,29 @@ impl Autotrace {
             }
         }))
         .expect("Couldn't parse statement when rewriting block")
+    }
+
+    fn rewrite_deep(mut block: syn::Block) -> syn::Block {
+        let mut new_statements = vec![];
+        for s in block.stmts {
+            let span = proc_macro2::Span::from(s.span()).unwrap();
+            let name = format!(
+                "Deep file: {:?}:{:?}->{:?}",
+                span.source_file().path(),
+                span.start(),
+                span.end()
+            );
+            let event = syn::parse(TokenStream::from(quote! {
+                ::holochain_tracing::with_top(|top|{
+                top.event(#name);
+                });
+            }))
+            .expect("Failed to create event");
+            new_statements.push(event);
+            new_statements.push(s);
+        }
+        block.stmts = new_statements;
+        block
     }
 }
 
@@ -50,7 +79,8 @@ impl syn::fold::Fold for Autotrace {
     // }
 
     // fn fold_trait_item_method(&mut self, i: syn::TraitItemMethod) -> syn::TraitItemMethod {
-    //     if DEBUG_OUTPUT {
+    //     if DE
+    // BUG_OUTPUT {
     //         println!(
     //             "#autotrace# fold trait item method: {}",
     //             i.sig.ident.to_string()
@@ -73,10 +103,19 @@ impl syn::fold::Fold for Autotrace {
         if i.sig.constness.is_some() || self.is_no_autotrace(&i.attrs) {
             return i;
         }
-        let func_name = format!("{} in {:?}:{:?} (auto:fn)", i.sig.ident, Span::call_site().source_file(), Span::call_site().start());
+        let span = proc_macro2::Span::from(i.span()).unwrap();
+        let func_name = format!(
+            "{} in {:?}:{:?} (auto:fn)",
+            i.sig.ident,
+            span.source_file().path(),
+            span.start()
+        );
         let mut i = i;
         if DEBUG_OUTPUT {
             println!("#autotrace# fold fn: {}", func_name);
+        }
+        if self.deep {
+            i.block = Box::new(Autotrace::rewrite_deep(*i.block));
         }
         i.block = Box::new(Autotrace::rewrite_block(func_name, *i.block));
         i
@@ -86,11 +125,20 @@ impl syn::fold::Fold for Autotrace {
         if i.sig.constness.is_some() || self.is_no_autotrace(&i.attrs) {
             return i;
         }
-        let method_name = format!("{} in {:?}:{:?} (auto:method)", i.sig.ident, Span::call_site().source_file(), Span::call_site().start());
+        let span = proc_macro2::Span::from(i.span()).unwrap();
+        let method_name = format!(
+            "{} in {:?}:{:?} (auto:method)",
+            i.sig.ident,
+            span.source_file().path(),
+            span.start()
+        );
         //let method_name = format!("{} (auto:method)", i.sig.ident);
         let mut i = i;
         if DEBUG_OUTPUT {
             println!("#autotrace# fold method: {}", method_name);
+        }
+        if self.deep {
+            i.block = Autotrace::rewrite_deep(i.block);
         }
         i.block = Autotrace::rewrite_block(method_name, i.block);
         i

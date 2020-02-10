@@ -22,9 +22,9 @@ pub mod tracer_console;
 pub mod tracer_network;
 
 pub use rustracing::{sampler::*, tag::Tag};
-pub use rustracing_jaeger::{reporter, Tracer, span::FinishedSpan};
-pub use span::{null_tracer, test_span, HSpan as Span, noop};
+pub use rustracing_jaeger::{reporter, span::FinishedSpan, Tracer};
+pub use span::{noop, null_tracer, test_span, HSpan as Span};
 pub use span_context::{EncodedSpanContext, HSpanContext as SpanContext};
-pub use span_wrap::{SpanWrap, EncodedSpanWrap, test_wrap, test_wrap_enc};
-pub use stack::{is_empty, push_span, push_span_with, with_top, with_top_or_null, top_follower};
+pub use span_wrap::{test_wrap, test_wrap_enc, EncodedSpanWrap, SpanWrap};
+pub use stack::{is_empty, push_span, push_span_with, top_follower, with_top, with_top_or_null};
 pub use tag::debug_tag;
