@@ -1,6 +1,6 @@
 [package]
 name = "holochain_tracing"
-version = "0.0.16"
+version = "0.0.17"
 authors = ["Holochain Core Dev Team <devcore@holochain.org>"]
 edition = "2018"
 description = "abstraction for distributed tracing choices"
@@ -23,5 +23,5 @@ rustracing_jaeger = "=0.2.1"
 shrinkwraprs = "0.3.0"
 log = "0.4.8"
 backtrace = "0.3.27"
-serde = "=1.0.89"
-serde_derive = "=1.0.89"
+serde = "=1.0.100"
+serde_derive = "=1.0.100"
