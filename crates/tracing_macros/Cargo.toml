@@ -1,6 +1,6 @@
 [package]
 name = "holochain_tracing_macros"
-version = "0.0.17"
+version = "0.0.18"
 authors = ["Holochain Core Dev Team <devcore@holochain.org>"]
 edition = "2018"
 description = "abstraction for distributed tracing choices"
