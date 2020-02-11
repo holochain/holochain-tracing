@@ -127,7 +127,7 @@ dependencies = [
 
 [[package]]
 name = "holochain_tracing"
-version = "0.0.17"
+version = "0.0.18"
 dependencies = [
  "backtrace",
  "crossbeam-channel",
@@ -142,7 +142,7 @@ dependencies = [
 
 [[package]]
 name = "holochain_tracing_macros"
-version = "0.0.17"
+version = "0.0.18"
 dependencies = [
  "crossbeam-channel",
  "holochain_tracing",
