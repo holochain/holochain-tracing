@@ -29,7 +29,8 @@ impl<T: Send + std::fmt::Debug> SpanSender<T> {
         let context = with_top(|top| {
             top.event(format!("SpanSender::send_wrapped: {:?}", v));
             top.context()
-        }).flatten();
+        })
+        .flatten();
         self.0.send(SpanWrap::new(v, context))
     }
 }
@@ -39,7 +40,8 @@ impl<T: Send + std::fmt::Debug + DeserializeOwned + Serialize + Clone> EncodedSp
         let context = with_top(|top| {
             top.event(format!("EncodedSpanSender::send_wrapped: {:?}", v));
             top.context()
-        }).flatten();
+        })
+        .flatten();
         self.0.send(SpanWrap::new(v, context).into())
     }
 }

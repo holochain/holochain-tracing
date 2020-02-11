@@ -20,6 +20,22 @@ mod funcs {
     pub fn c(x: u32) -> u32 {
         x + 1
     }
+    #[autotrace_deep]
+    pub fn d(mut x: u32) -> u32 {
+        let mut p = 9;
+        match Some(true) {
+            Some(_) => (),
+            _ => (),
+        }
+        {
+            x = x + 1;
+        }
+        if false {
+            x = x + 1;
+        }
+        p = p + 1;
+        x + 1 + p
+    }
 }
 
 #[autotrace]
@@ -73,7 +89,10 @@ mod methods {
         }
 
         pub fn i(&self, x: u32) -> u32 {
+            autotrace_deep_block!({
+                if false {}
             x + 1
+            })
         }
     }
 }
@@ -95,7 +114,11 @@ fn function_attr() {
         .take(num)
         .map(|s| s.operation_name().to_owned())
         .collect();
-    assert_eq!(names, vec!["c (auto:fn)", "b (auto:fn)", "a (auto:fn)", "root"]);
+    assert_eq!(names, vec![
+        "c in \"crates/tracing_macros/tests/macros.rs\":LineColumn { line: 20, column: 4 } (auto:fn)", 
+        "b in \"crates/tracing_macros/tests/macros.rs\":LineColumn { line: 16, column: 4 } (auto:fn)", 
+        "a in \"crates/tracing_macros/tests/macros.rs\":LineColumn { line: 12, column: 4 } (auto:fn)", 
+        "root"]);
 }
 
 #[test]
@@ -115,7 +138,15 @@ fn module_attr() {
         .take(num)
         .map(|s| s.operation_name().to_owned())
         .collect();
-    assert_eq!(names, vec!["f (auto:fn)", "e (auto:fn)", "d (auto:fn)", "root"]);
+    assert_eq!(
+        names,
+        vec![
+            "f in \"crates/tracing_macros/tests/macros.rs\":LineColumn { line: 52, column: 4 } (auto:fn)",
+            "e in \"crates/tracing_macros/tests/macros.rs\":LineColumn { line: 49, column: 4 } (auto:fn)",
+            "d in \"crates/tracing_macros/tests/macros.rs\":LineColumn { line: 45, column: 4 } (auto:fn)",
+            "root"
+        ]
+    );
 }
 
 #[test]
@@ -136,7 +167,15 @@ fn method_attr() {
         .take(num)
         .map(|s| s.operation_name().to_owned())
         .collect();
-    assert_eq!(names, vec!["i (auto:method)", "h (auto:fn)", "g (auto:method)", "root"]);
+    assert_eq!(
+        names,
+        vec![
+            "i in \"crates/tracing_macros/tests/macros.rs\":LineColumn { line: 91, column: 8 } (auto:method)",
+            "h in \"crates/tracing_macros/tests/macros.rs\":LineColumn { line: 87, column: 8 } (auto:fn)",
+            "g in \"crates/tracing_macros/tests/macros.rs\":LineColumn { line: 82, column: 8 } (auto:method)",
+            "root"
+        ]
+    );
 }
 
 // #[test]

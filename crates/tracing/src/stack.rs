@@ -5,10 +5,10 @@
 //! Using functions like `with_top` allow the user to access the stack directly, for situations
 //! like needing to take a span context and send it into another thread, or out of the process entirely.
 
-use std::cell::RefCell;
-use std::collections::BTreeSet;
 use crate::span;
 use crate::Span;
+use std::cell::RefCell;
+use std::collections::BTreeSet;
 
 /// This enum defines how to handle situations where we expect there to be a Span
 /// on the stack, but there is none.
@@ -136,17 +136,14 @@ pub fn with_top<A, F: FnOnce(&mut Span) -> A>(f: F) -> Option<A> {
 
 /// If the stack is not empty, return the top item, else return None
 pub fn with_top_or_null<A, F: FnOnce(&mut Span) -> A>(f: F) -> A {
-    SPANSTACK.with(|stack| {
-        match stack.borrow_mut().top() {
-            Some(top) => f(top),
-            None => {
-                handle_empty_stack("Using with_top but the span stack is empty! Using noop span.");
-                f(&mut Span::noop())
-            }
+    SPANSTACK.with(|stack| match stack.borrow_mut().top() {
+        Some(top) => f(top),
+        None => {
+            handle_empty_stack("Using with_top but the span stack is empty! Using noop span.");
+            f(&mut Span::noop())
         }
     })
 }
-
 
 /// If the stack is not empty, return the top item, else return None
 pub fn top_follower<S: Into<std::borrow::Cow<'static, str>>>(name: S) -> Span {
@@ -222,5 +219,4 @@ mod tests {
         }
         with_stack(|stack| assert_eq!(stack.len(), 0));
     }
-
 }

@@ -1,3 +1,4 @@
+#![feature(proc_macro_span)]
 extern crate crossbeam_channel;
 extern crate holochain_tracing;
 extern crate proc_macro;
@@ -16,6 +17,19 @@ use quote::quote;
 pub fn autotrace(_attr: TokenStream, code: TokenStream) -> TokenStream {
     let mut at = Autotrace::default();
     let output = syn::fold::fold_item(&mut at, syn::parse(code).unwrap());
+    TokenStream::from(quote! {#output})
+}
+
+#[proc_macro_attribute]
+pub fn autotrace_deep(_attr: TokenStream, code: TokenStream) -> TokenStream {
+    let mut at = Autotrace::deep();
+    let output = syn::fold::fold_item(&mut at, syn::parse(code).unwrap());
+    TokenStream::from(quote! {#output})
+}
+
+#[proc_macro]
+pub fn autotrace_deep_block(code: TokenStream) -> TokenStream {
+    let output = Autotrace::rewrite_deep(syn::parse(code).unwrap());
     TokenStream::from(quote! {#output})
 }
 
