@@ -3,6 +3,16 @@ use crate::{
     SpanWrap, Tag, Tracer,
 };
 /// Add a span to the stack that follows from a SpanWrap
+/// # Example
+/// ```
+/// # use holochain_tracing::{null_tracer, Span, follow};
+/// # let tracer = null_tracer();
+/// # let data = 1;
+/// # let span = Span::from(tracer.span("Following from some incoming span wrap").start());
+/// # let tracer = Some(tracer);
+/// # let span_wrap = span.wrap(data);
+/// let _spanguard = follow(&tracer, &span_wrap, "func_name".into()); 
+/// ```
 pub fn follow<T>(
     tracer: &Option<Tracer>,
     span_wrap: &SpanWrap<T>,
