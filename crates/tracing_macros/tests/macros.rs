@@ -36,6 +36,10 @@ mod funcs {
         p = p + 1;
         x + 1 + p
     }
+
+    pub fn e() -> String {
+        here!(())
+    }
 }
 
 #[autotrace]
@@ -91,7 +95,7 @@ mod methods {
         pub fn i(&self, x: u32) -> u32 {
             autotrace_deep_block!({
                 if false {}
-            x + 1
+                x + 1
             })
         }
     }
@@ -114,11 +118,20 @@ fn function_attr() {
         .take(num)
         .map(|s| s.operation_name().to_owned())
         .collect();
-    assert_eq!(names, vec![
-        "c in \"crates/tracing_macros/tests/macros.rs\":LineColumn { line: 20, column: 4 } (auto:fn)", 
-        "b in \"crates/tracing_macros/tests/macros.rs\":LineColumn { line: 16, column: 4 } (auto:fn)", 
-        "a in \"crates/tracing_macros/tests/macros.rs\":LineColumn { line: 12, column: 4 } (auto:fn)", 
-        "root"]);
+    assert_eq!(
+        names,
+        vec![
+            "c in crates/tracing_macros/tests/macros.rs:20 (auto:fn)",
+            "b in crates/tracing_macros/tests/macros.rs:16 (auto:fn)",
+            "a in crates/tracing_macros/tests/macros.rs:12 (auto:fn)",
+            "root"
+        ]
+    );
+}
+
+#[test]
+fn here_test() {
+    assert_eq!(funcs::e(), "crates/tracing_macros/tests/macros.rs:41");
 }
 
 #[test]
@@ -141,9 +154,9 @@ fn module_attr() {
     assert_eq!(
         names,
         vec![
-            "f in \"crates/tracing_macros/tests/macros.rs\":LineColumn { line: 52, column: 4 } (auto:fn)",
-            "e in \"crates/tracing_macros/tests/macros.rs\":LineColumn { line: 49, column: 4 } (auto:fn)",
-            "d in \"crates/tracing_macros/tests/macros.rs\":LineColumn { line: 45, column: 4 } (auto:fn)",
+            "f in crates/tracing_macros/tests/macros.rs:56 (auto:fn)",
+            "e in crates/tracing_macros/tests/macros.rs:53 (auto:fn)",
+            "d in crates/tracing_macros/tests/macros.rs:49 (auto:fn)",
             "root"
         ]
     );
@@ -170,9 +183,9 @@ fn method_attr() {
     assert_eq!(
         names,
         vec![
-            "i in \"crates/tracing_macros/tests/macros.rs\":LineColumn { line: 91, column: 8 } (auto:method)",
-            "h in \"crates/tracing_macros/tests/macros.rs\":LineColumn { line: 87, column: 8 } (auto:fn)",
-            "g in \"crates/tracing_macros/tests/macros.rs\":LineColumn { line: 82, column: 8 } (auto:method)",
+            "i in crates/tracing_macros/tests/macros.rs:95 (auto:method)",
+            "h in crates/tracing_macros/tests/macros.rs:91 (auto:fn)",
+            "g in crates/tracing_macros/tests/macros.rs:86 (auto:method)",
             "root"
         ]
     );
