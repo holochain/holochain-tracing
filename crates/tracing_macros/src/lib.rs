@@ -44,3 +44,18 @@ pub fn newrelic_autotrace(attr: TokenStream, code: TokenStream) -> TokenStream {
 pub fn no_autotrace(_attr: TokenStream, code: TokenStream) -> TokenStream {
     code
 }
+
+#[proc_macro]
+pub fn here(code: TokenStream) -> TokenStream {
+    let span = code
+        .into_iter()
+        .next()
+        .expect("Failed to unwrap code, pass in a ()")
+        .span();
+    let position = format!(
+        "{}:{}",
+        span.source_file().path().display(),
+        span.start().line
+    );
+    TokenStream::from(quote! {String::from(#position)})
+}

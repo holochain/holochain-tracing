@@ -20,6 +20,7 @@ mod stack;
 mod tag;
 pub mod tracer_console;
 pub mod tracer_network;
+mod utils;
 
 pub use rustracing::{sampler::*, tag::Tag};
 pub use rustracing_jaeger::{reporter, span::FinishedSpan, Tracer};
@@ -28,3 +29,4 @@ pub use span_context::{EncodedSpanContext, HSpanContext as SpanContext};
 pub use span_wrap::{test_wrap, test_wrap_enc, EncodedSpanWrap, SpanWrap};
 pub use stack::{is_empty, push_span, push_span_with, top_follower, with_top, with_top_or_null};
 pub use tag::debug_tag;
+pub use utils::{follow, follow_encoded, follow_encoded_tag, wrap, wrap_with_tag};

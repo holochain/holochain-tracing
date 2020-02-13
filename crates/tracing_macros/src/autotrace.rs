@@ -44,10 +44,10 @@ impl Autotrace {
         for s in block.stmts {
             let span = proc_macro2::Span::from(s.span()).unwrap();
             let name = format!(
-                "Deep file: {:?}:{:?}->{:?}",
-                span.source_file().path(),
-                span.start(),
-                span.end()
+                "Deep file: {}:{}->{}",
+                span.source_file().path().display(),
+                span.start().line,
+                span.end().line
             );
             let event = syn::parse(TokenStream::from(quote! {
                 ::holochain_tracing::with_top(|top|{
@@ -105,10 +105,10 @@ impl syn::fold::Fold for Autotrace {
         }
         let span = proc_macro2::Span::from(i.span()).unwrap();
         let func_name = format!(
-            "{} in {:?}:{:?} (auto:fn)",
+            "{} in {}:{} (auto:fn)",
             i.sig.ident,
-            span.source_file().path(),
-            span.start()
+            span.source_file().path().display(),
+            span.start().line
         );
         let mut i = i;
         if DEBUG_OUTPUT {
@@ -120,17 +120,17 @@ impl syn::fold::Fold for Autotrace {
         i.block = Box::new(Autotrace::rewrite_block(func_name, *i.block));
         i
     }
-    
+
     fn fold_impl_item_method(&mut self, i: ImplItemMethod) -> ImplItemMethod {
         if i.sig.constness.is_some() || self.is_no_autotrace(&i.attrs) {
             return i;
         }
         let span = proc_macro2::Span::from(i.span()).unwrap();
         let method_name = format!(
-            "{} in {:?}:{:?} (auto:method)",
+            "{} in {}:{} (auto:method)",
             i.sig.ident,
-            span.source_file().path(),
-            span.start()
+            span.source_file().path().display(),
+            span.start().line
         );
         //let method_name = format!("{} (auto:method)", i.sig.ident);
         let mut i = i;

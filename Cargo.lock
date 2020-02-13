@@ -8,9 +8,9 @@ checksum = "1d49d90015b3c36167a20fe2810c5cd875ad504b39cff3d4eae7977e6b7c1cb2"
 
 [[package]]
 name = "backtrace"
-version = "0.3.43"
+version = "0.3.44"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "7f80256bc78f67e7df7e36d77366f636ed976895d91fe2ab9efa3973e8fe8c4f"
+checksum = "e4036b9bf40f3cf16aba72a3d65e8a520fc4bafcdc7079aea8f848c58c5b5536"
 dependencies = [
  "backtrace-sys",
  "cfg-if",
@@ -127,7 +127,7 @@ dependencies = [
 
 [[package]]
 name = "holochain_tracing"
-version = "0.0.18"
+version = "0.0.19"
 dependencies = [
  "backtrace",
  "crossbeam-channel",
@@ -142,7 +142,7 @@ dependencies = [
 
 [[package]]
 name = "holochain_tracing_macros"
-version = "0.0.18"
+version = "0.0.19"
 dependencies = [
  "crossbeam-channel",
  "holochain_tracing",
@@ -480,15 +480,15 @@ checksum = "388a1df253eca08550bef6c72392cfe7c30914bf41df5269b68cbd6ff8f570a3"
 
 [[package]]
 name = "serde"
-version = "1.0.100"
+version = "1.0.104"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "f4473e8506b213730ff2061073b48fa51dcc66349219e2e7c5608f0296a1d95a"
+checksum = "414115f25f818d7dfccec8ee535d76949ae78584fc4f79a6f45a904bf8ab4449"
 
 [[package]]
 name = "serde_derive"
-version = "1.0.100"
+version = "1.0.104"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "11e410fde43e157d789fc290d26bc940778ad0fdd47836426fbac36573710dbb"
+checksum = "128f9e303a5a29922045a830221b8f78ec74a5f544944f3d5984f8ec3895ef64"
 dependencies = [
  "proc-macro2 1.0.8",
  "quote 1.0.2",
