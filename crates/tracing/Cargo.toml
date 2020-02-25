@@ -25,3 +25,8 @@ log = "0.4.8"
 backtrace = "0.3.27"
 serde = "=1.0.104"
 serde_derive = "=1.0.104"
+opentelemetry-jaeger = "0.1.0"
+opentelemetry = { version = "0.2.0", features = ["serialize"] }
+tracing = "0.1.12"
+tracing-opentelemetry = { git = "https://github.com/freesig/tracing-opentelemetry.git", branch = "holochain" }
+tracing-subscriber = "0.2.0"

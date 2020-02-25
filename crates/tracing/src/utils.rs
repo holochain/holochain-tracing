@@ -11,7 +11,7 @@ use crate::{
 /// # let span = Span::from(tracer.span("Following from some incoming span wrap").start());
 /// # let tracer = Some(tracer);
 /// # let span_wrap = span.wrap(data);
-/// let _spanguard = follow(&tracer, &span_wrap, "func_name".into()); 
+/// let _spanguard = follow(&tracer, &span_wrap, "func_name".into());
 /// ```
 pub fn follow<T>(
     tracer: &Option<Tracer>,
