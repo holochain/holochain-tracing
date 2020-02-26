@@ -17,6 +17,7 @@ mod span;
 mod span_context;
 mod span_wrap;
 mod stack;
+pub mod structured;
 mod tag;
 pub mod tracer_console;
 pub mod tracer_network;

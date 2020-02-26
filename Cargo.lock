@@ -301,9 +301,11 @@ dependencies = [
  "rustracing_jaeger",
  "serde",
  "serde_derive",
+ "serde_json",
  "shrinkwraprs",
  "tracing",
  "tracing-opentelemetry",
+ "tracing-serde",
  "tracing-subscriber",
 ]
 
@@ -870,9 +872,9 @@ dependencies = [
 
 [[package]]
 name = "serde_json"
-version = "1.0.48"
+version = "1.0.47"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "9371ade75d4c2d6cb154141b9752cf3781ec9c05e0e5cf35060e1e70ee7b9c25"
+checksum = "15913895b61e0be854afd32fd4163fcd2a3df34142cf2cb961b310ce694cbf90"
 dependencies = [
  "itoa",
  "ryu",
@@ -1046,6 +1048,7 @@ dependencies = [
 [[package]]
 name = "tracing-opentelemetry"
 version = "0.2.0"
+source = "git+https://github.com/freesig/tracing-opentelemetry.git?branch=holochain#4438efab1b4f3f0872f530187a65081aeed8a039"
 dependencies = [
  "opentelemetry",
  "rand 0.7.3",
