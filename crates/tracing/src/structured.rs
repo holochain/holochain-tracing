@@ -66,8 +66,10 @@ where
         let file = meta.file();
         let line = meta.line();
         let module_path = meta.module_path();
+        let level = meta.level();
+        let target = meta.target();
         let id = span.id();
-        let json = json!({"id": id.as_serde(), "name": name, "module_path": module_path, "file": file, "line": line});
+        let json = json!({"id": id.as_serde(), "name": name, "level": level.as_serde(), "target": target, "module_path": module_path, "file": file, "line": line});
         parents.push(json);
         Ok(())
     })
@@ -77,9 +79,11 @@ where
     let file = meta.file();
     let line = meta.line();
     let module_path = meta.module_path();
+    let level = meta.level();
+    let target = meta.target();
     let mut values = EventFieldVisitor::new();
     event.record(&mut values);
-    let json = json!({"time": now, "name": name, "module_path": module_path, "file": file, "line": line, "fields": values.json, "spans": parents});
+    let json = json!({"time": now, "name": name, "level": level.as_serde(), "target": target, "module_path": module_path, "file": file, "line": line, "fields": values.json, "spans": parents});
     writeln!(writer, "{}", json)
 }
 
