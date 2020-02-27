@@ -1,6 +1,6 @@
 use tracing::{Event, Subscriber};
 use tracing_serde::AsSerde;
-use tracing_subscriber::fmt::{FmtContext, FormatFields};
+use tracing_subscriber::fmt::{FmtContext, FormatFields, time::ChronoUtc};
 use tracing_subscriber::{filter::EnvFilter, registry::LookupSpan, FmtSubscriber};
 
 use serde_json::json;
@@ -35,6 +35,7 @@ where
     S: Subscriber + for<'a> LookupSpan<'a>,
     N: for<'writer> FormatFields<'writer> + 'static,
 {
+    let now = chrono::offset::Utc::now().to_rfc3339_opts(chrono::SecondsFormat::Millis, true);
     let mut parents = vec![];
     ctx.visit_spans::<(), _>(|span| {
         let meta = span.metadata();
@@ -43,7 +44,7 @@ where
         Ok(())
     })
     .ok();
-    let json = json!({"event": event.as_serde(), "parents": parents});
+    let json = json!({"time": now, "event": event.as_serde(), "parents": parents});
     /*
     let values: Option<serde_json::Map<String, serde_json::Value>> = json.as_object()
         .and_then(|o| o.get("event").and_then(|e| e.as_object()))
@@ -80,7 +81,7 @@ pub fn init_fmt(output: Output) -> Result<(), String> {
     let subscriber = FmtSubscriber::builder().with_env_filter(filter);
     match output {
         Output::Json => {
-            let subscriber = subscriber.json().event_format(fm);
+            let subscriber = subscriber.with_timer(ChronoUtc::rfc3339()).json().event_format(fm);
             tracing::subscriber::set_global_default(subscriber.finish())
                 .map_err(|e| format!("{:?}", e))
         }

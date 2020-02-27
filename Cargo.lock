@@ -108,9 +108,9 @@ checksum = "4785bdd1c96b2a846b2bd7cc02e86b6b3dbf14e7e53446c4f54c92a361040822"
 
 [[package]]
 name = "chrono"
-version = "0.4.10"
+version = "0.4.6"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "31850b4a4d6bae316f7a09e691c944c28299298837edc0a03f755618c23cbc01"
+checksum = "45912881121cb26fad7c38c17ba7daa18764771836b34fab7d3fbd93ed633878"
 dependencies = [
  "num-integer",
  "num-traits",
@@ -292,6 +292,7 @@ name = "holochain_tracing"
 version = "0.0.20"
 dependencies = [
  "backtrace",
+ "chrono",
  "crossbeam-channel",
  "lazy_static",
  "log",

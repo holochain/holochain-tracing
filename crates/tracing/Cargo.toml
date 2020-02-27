@@ -33,3 +33,4 @@ tracing-opentelemetry = { git = "https://github.com/freesig/tracing-opentelemetr
 tracing-subscriber = "0.2.1"
 tracing-serde = "=0.1.0"
 serde-value-flatten = "=0.1.0"
+chrono = "=0.4.6"
