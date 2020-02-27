@@ -43,6 +43,10 @@ impl Visit for EventFieldVisitor {
         self.json
             .insert(field.name().into(), json!(format!("{:?}", value)));
     }
+
+    fn record_str(&mut self, field: &Field, value: &str) {
+        self.json.insert(field.name().into(), json!(value));
+    }
 }
 
 fn format_event<S, N>(
