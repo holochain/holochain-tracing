@@ -79,7 +79,7 @@ where
     let module_path = meta.module_path();
     let mut values = EventFieldVisitor::new();
     event.record(&mut values);
-    let json = json!({"time": now, "name": name, "module_path": module_path, "file": file, "line": line, "fields": values.json});
+    let json = json!({"time": now, "name": name, "module_path": module_path, "file": file, "line": line, "fields": values.json, "spans": parents});
     writeln!(writer, "{}", json)
 }
 
