@@ -301,11 +301,11 @@ dependencies = [
  "rustracing",
  "rustracing_jaeger",
  "serde",
- "serde-value-flatten",
  "serde_derive",
  "serde_json",
  "shrinkwraprs",
  "tracing",
+ "tracing-core",
  "tracing-opentelemetry",
  "tracing-serde",
  "tracing-subscriber",
@@ -862,26 +862,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "serde-value"
-version = "0.6.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "5a65a7291a8a568adcae4c10a677ebcedbc6c9cec91c054dee2ce40b0e3290eb"
-dependencies = [
- "ordered-float",
- "serde",
-]
-
-[[package]]
-name = "serde-value-flatten"
-version = "0.1.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "ca9f4b921303593e52a901ec78266bb1352645d675a42e062d7704061144f6f0"
-dependencies = [
- "serde",
- "serde-value",
-]
-
-[[package]]
 name = "serde_derive"
 version = "1.0.104"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1049,9 +1029,9 @@ dependencies = [
 
 [[package]]
 name = "tracing-core"
-version = "0.1.9"
+version = "0.1.10"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "13a46f11e372b8bd4b4398ea54353412fdd7fd42a8370c7e543e218cf7661978"
+checksum = "0aa83a9a47081cd522c09c81b31aec2c9273424976f922ad61c053b58350b715"
 dependencies = [
  "lazy_static",
 ]

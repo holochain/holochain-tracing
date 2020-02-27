@@ -1,7 +1,8 @@
 use tracing::{Event, Subscriber};
+use tracing_core::field::Field;
 use tracing_serde::AsSerde;
-use tracing_subscriber::fmt::{FmtContext, FormatFields, time::ChronoUtc};
-use tracing_subscriber::{filter::EnvFilter, registry::LookupSpan, FmtSubscriber};
+use tracing_subscriber::fmt::{time::ChronoUtc, FmtContext, FormatFields};
+use tracing_subscriber::{field::Visit, filter::EnvFilter, registry::LookupSpan, FmtSubscriber};
 
 use serde_json::json;
 use std::str::FromStr;
@@ -26,6 +27,24 @@ impl FromStr for Output {
     }
 }
 
+pub struct EventFieldVisitor {
+    json: serde_json::Map<String, serde_json::Value>,
+}
+
+impl EventFieldVisitor {
+    fn new() -> Self {
+        let json = serde_json::Map::new();
+        EventFieldVisitor { json }
+    }
+}
+
+impl Visit for EventFieldVisitor {
+    fn record_debug(&mut self, field: &Field, value: &dyn std::fmt::Debug) {
+        self.json
+            .insert(field.name().into(), json!(format!("{:?}", value)));
+    }
+}
+
 fn format_event<S, N>(
     ctx: &FmtContext<'_, S, N>,
     writer: &mut dyn std::fmt::Write,
@@ -39,28 +58,25 @@ where
     let mut parents = vec![];
     ctx.visit_spans::<(), _>(|span| {
         let meta = span.metadata();
+        let name = meta.name();
+        let file = meta.file();
+        let line = meta.line();
+        let module_path = meta.module_path();
         let id = span.id();
-        parents.push(json!({"id": id.as_serde(), "metadata": meta.as_serde()}));
+        let json = json!({"id": id.as_serde(), "name": name, "module_path": module_path, "file": file, "line": line});
+        parents.push(json);
         Ok(())
     })
     .ok();
-    let json = json!({"time": now, "event": event.as_serde(), "parents": parents});
-    /*
-    let values: Option<serde_json::Map<String, serde_json::Value>> = json.as_object()
-        .and_then(|o| o.get("event").and_then(|e| e.as_object()))
-    .map(|e: &serde_json::Map<String, serde_json::Value>| {
-        e.iter()
-            .filter(|(key, _)| key.as_str() != "metadata")
-            .map(|(k, v)| (k.to_string(), v.clone()))
-            .collect()
-    });
-    let ref module = json["event"]["metadata"]["module_path"];
-    let ref file = json["event"]["metadata"]["file"];
-    let ref line  = json["event"]["metadata"]["line"];
-    json!({"module": module});
-    */
-    let ser = serde_value_flatten::to_flatten_maptree("-", None, &json).unwrap();
-    writeln!(writer, "{}", json!(ser))
+    let meta = event.metadata();
+    let name = meta.name();
+    let file = meta.file();
+    let line = meta.line();
+    let module_path = meta.module_path();
+    let mut values = EventFieldVisitor::new();
+    event.record(&mut values);
+    let json = json!({"time": now, "name": name, "module_path": module_path, "file": file, "line": line, "fields": values.json});
+    writeln!(writer, "{}", json)
 }
 
 pub fn init_fmt(output: Output) -> Result<(), String> {
@@ -81,7 +97,10 @@ pub fn init_fmt(output: Output) -> Result<(), String> {
     let subscriber = FmtSubscriber::builder().with_env_filter(filter);
     match output {
         Output::Json => {
-            let subscriber = subscriber.with_timer(ChronoUtc::rfc3339()).json().event_format(fm);
+            let subscriber = subscriber
+                .with_timer(ChronoUtc::rfc3339())
+                .json()
+                .event_format(fm);
             tracing::subscriber::set_global_default(subscriber.finish())
                 .map_err(|e| format!("{:?}", e))
         }
