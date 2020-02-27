@@ -300,6 +300,7 @@ dependencies = [
  "rustracing",
  "rustracing_jaeger",
  "serde",
+ "serde-value-flatten",
  "serde_derive",
  "serde_json",
  "shrinkwraprs",
@@ -857,6 +858,26 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "414115f25f818d7dfccec8ee535d76949ae78584fc4f79a6f45a904bf8ab4449"
 dependencies = [
  "serde_derive",
+]
+
+[[package]]
+name = "serde-value"
+version = "0.6.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "5a65a7291a8a568adcae4c10a677ebcedbc6c9cec91c054dee2ce40b0e3290eb"
+dependencies = [
+ "ordered-float",
+ "serde",
+]
+
+[[package]]
+name = "serde-value-flatten"
+version = "0.1.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "ca9f4b921303593e52a901ec78266bb1352645d675a42e062d7704061144f6f0"
+dependencies = [
+ "serde",
+ "serde-value",
 ]
 
 [[package]]

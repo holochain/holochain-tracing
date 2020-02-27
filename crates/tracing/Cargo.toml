@@ -30,5 +30,6 @@ opentelemetry-jaeger = "0.1.0"
 opentelemetry = { version = "0.2.0", features = ["serialize"] }
 tracing = "0.1.12"
 tracing-opentelemetry = { git = "https://github.com/freesig/tracing-opentelemetry.git", branch = "holochain" }
-tracing-subscriber = "0.2.0"
+tracing-subscriber = "0.2.1"
 tracing-serde = "=0.1.0"
+serde-value-flatten = "=0.1.0"

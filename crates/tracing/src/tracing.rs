@@ -1,4 +1,3 @@
-use crate::structured::StructuredLayer;
 use opentelemetry::{
     api::{self, Provider, Span},
     global::{self, BoxedSpan, BoxedTracer},
@@ -35,7 +34,7 @@ macro_rules! follow_spans {
     () => {};
 }
 
-pub fn init(service_name: String, structured: bool) -> Result<(), String> {
+pub fn init(service_name: String) -> Result<(), String> {
     let exporter = opentelemetry_jaeger::Exporter::builder()
         .with_agent_endpoint("127.0.0.1:6831".parse().map_err(|e| format!("{:?}", e))?)
         .with_process(opentelemetry_jaeger::Process {
@@ -54,15 +53,8 @@ pub fn init(service_name: String, structured: bool) -> Result<(), String> {
     global::set_provider(provider);
     let tracer = global::trace_provider().get_tracer("tracing");
     let opentelemetry = OpentelemetryLayer::with_tracer(tracer);
-    if structured {
-        let subscriber = opentelemetry
-            .and_then(StructuredLayer::new())
-            .with_subscriber(Registry::default());
-        tracing::subscriber::set_global_default(subscriber).map_err(|e| format!("{:?}", e))?;
-    } else {
-        let subscriber = opentelemetry.with_subscriber(Registry::default());
-        tracing::subscriber::set_global_default(subscriber).map_err(|e| format!("{:?}", e))?;
-    }
+    let subscriber = opentelemetry.with_subscriber(Registry::default());
+    tracing::subscriber::set_global_default(subscriber).map_err(|e| format!("{:?}", e))?;
     Ok(())
 }
 
