@@ -7,12 +7,11 @@ use tracing::{Id, Subscriber};
 use tracing_opentelemetry::OpentelemetryLayer;
 use tracing_subscriber::{layer::Layered, registry::LookupSpan, Layer, Registry};
 
+/// Allows following from a cross boundary context
 #[macro_export]
 macro_rules! follow_span {
     ($level:expr, $context:expr) => {
         if let Some(context) = $context {
-            // This isn't an Error but we need to make sure it always goes on the stack
-            // It won't be reported to jaeger
             let follow_span = ::tracing::span!(
                 target: module_path!(),
                 parent: None,
@@ -39,12 +38,6 @@ macro_rules! span_wrap_encode {
             .unwrap_or_else(|| $crate::SpanWrap::new((), None))
             .map(|_| $data)
     }};
-}
-
-// TODO figure out how to create many spans and give the resulting IDs back to the dev
-#[macro_export]
-macro_rules! follow_spans {
-    () => {};
 }
 
 pub(crate) fn init<S>(service_name: String) -> Result<impl Layer<S>, String>

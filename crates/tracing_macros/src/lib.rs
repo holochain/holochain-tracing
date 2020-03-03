@@ -19,7 +19,6 @@ pub fn autotrace(_attr: TokenStream, code: TokenStream) -> TokenStream {
     if cfg!(feature = "tracing-on") {
         let mut at = Autotrace::default();
         let output = syn::fold::fold_item(&mut at, syn::parse(code).unwrap());
-        //TokenStream::from(quote! {#output})
         let span = output.span();
         TokenStream::from(quote::quote_spanned! {span=>
             #output
@@ -56,7 +55,6 @@ pub fn newrelic_autotrace(attr: TokenStream, code: TokenStream) -> TokenStream {
         let mut new_relic = NewRelicTrace::new(attr);
         let output = syn::fold::fold_item(&mut new_relic, syn::parse(code).unwrap());
         let span = output.span();
-        //dbg!(span.start());
         TokenStream::from(quote::quote_spanned! {span=>
             #output
         })

@@ -3,15 +3,22 @@ use tracing_core::field::Field;
 use tracing_serde::AsSerde;
 use tracing_subscriber::fmt::{time::ChronoUtc, FmtContext, FormatFields};
 use tracing_subscriber::layer::Layer;
-use tracing_subscriber::{field::Visit, filter::EnvFilter, registry::LookupSpan, Registry, FmtSubscriber};
+use tracing_subscriber::{
+    field::Visit, filter::EnvFilter, registry::LookupSpan, FmtSubscriber, Registry,
+};
 
 use serde_json::json;
 use std::str::FromStr;
 
+/// Sets the kind of structed logging output you want
 pub enum Output {
+    /// Outputs everything as json
     Json,
+    /// Regular logging (default)
     Log,
+    /// More compact version of above
     Compact,
+    /// No logging to console
     None,
 }
 
@@ -52,6 +59,7 @@ impl Visit for EventFieldVisitor {
     }
 }
 
+// Formating the events for json
 fn format_event<S, N>(
     ctx: &FmtContext<'_, S, N>,
     writer: &mut dyn std::fmt::Write,
@@ -90,6 +98,8 @@ where
     writeln!(writer, "{}", json)
 }
 
+/// This checks RUST_LOG for a filter but doesn't complain if there is none or it doesn't parse.
+/// It then checks for CUSTOM_FILTER which if set will output an error if it doesn't parse.
 pub fn init_fmt(output: Output, jaeger: Option<String>) -> Result<(), String> {
     let mut filter = EnvFilter::from_default_env();
     if std::env::var("CUSTOM_FILTER").is_ok() {
@@ -105,36 +115,39 @@ pub fn init_fmt(output: Output, jaeger: Option<String>) -> Result<(), String> {
         &mut dyn std::fmt::Write,
         &Event<'_>,
     ) -> std::fmt::Result = format_event;
-    let subscriber = FmtSubscriber::builder().with_env_filter(filter);
 
-    fn finish<S>(subscriber: S, jaeger: Option<String>) -> Result<(), String>
-    where
-        S: Subscriber + Send + Sync + for<'span> LookupSpan<'span>,
-    {
-        match jaeger {
-            Some(name) => {
-                let layer = crate::tracing::init(name)?;
-                let subscriber = layer.with_subscriber(subscriber);
-                tracing::subscriber::set_global_default(subscriber).map_err(|e| format!("{:?}", e))
-            }
-            None => {
-                tracing::subscriber::set_global_default(subscriber).map_err(|e| format!("{:?}", e))
-            }
-        }
-    };
+    let subscriber = FmtSubscriber::builder();
+
     match output {
         Output::Json => {
             let subscriber = subscriber
                 .with_timer(ChronoUtc::rfc3339())
                 .json()
                 .event_format(fm);
-            finish(subscriber.finish(), jaeger)
+            finish(subscriber.finish(), jaeger, filter)
         }
-        Output::Log => finish(subscriber.finish(), jaeger),
+        Output::Log => finish(subscriber.finish(), jaeger, filter),
         Output::Compact => {
             let subscriber = subscriber.compact();
-            finish(subscriber.finish(), jaeger)
+            finish(subscriber.finish(), jaeger, filter)
         }
-        Output::None => finish(Registry::default(), jaeger),
+        Output::None => finish(Registry::default(), jaeger, filter),
+    }
+}
+
+fn finish<S>(subscriber: S, jaeger: Option<String>, filter: EnvFilter) -> Result<(), String>
+where
+    S: Subscriber + Send + Sync + for<'span> LookupSpan<'span>,
+{
+    match jaeger {
+        Some(name) => {
+            let layer = crate::tracing::init(name)?;
+            let subscriber = filter.and_then(layer).with_subscriber(subscriber);
+            tracing::subscriber::set_global_default(subscriber).map_err(|e| format!("{:?}", e))
+        }
+        None => {
+            let subscriber = filter.with_subscriber(subscriber);
+            tracing::subscriber::set_global_default(subscriber).map_err(|e| format!("{:?}", e))
+        },
     }
 }

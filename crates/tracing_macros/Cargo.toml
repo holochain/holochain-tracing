@@ -25,7 +25,6 @@ lazy_static = "=1.4.0"
 proc-macro2 = { version = "1.0.8", features = ["span-locations"] }
 
 [features]
-# no features by default
 default = ["tracing-on"]
 newrelic-on = []
 tracing-on = []
