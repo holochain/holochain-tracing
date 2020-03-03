@@ -28,7 +28,7 @@ impl Autotrace {
 
 impl Autotrace {
     fn rewrite_block(name: String, block: syn::Block) -> syn::Block {
-        syn::parse(TokenStream::from(quote! {
+        syn::parse(TokenStream::from(quote::quote! {
             {
                 let __autotrace_guard = ::holochain_tracing::push_span_with(
                     |span| span.child(#name)

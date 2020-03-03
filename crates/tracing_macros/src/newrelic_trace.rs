@@ -20,6 +20,7 @@ impl NewRelicTrace {
     fn rewrite_block(app_name: &String, name: String, block: syn::Block) -> syn::Block {
         let new_block = quote! {
         {
+            use crate::NEW_RELIC_LICENSE_KEY;
             //if new relic is somehow down or the daemon is not running, the program should continue normally
             //stated away from combinators because of closure ownership
             let _transaction = if let Some(license_key) = &*NEW_RELIC_LICENSE_KEY
@@ -54,11 +55,13 @@ impl NewRelicTrace {
 
 impl syn::fold::Fold for NewRelicTrace {
     fn fold_item_mod(&mut self, i: syn::ItemMod) -> syn::ItemMod {
+        /*
         #[cfg(debug_assertions)]
         println!(
             "#newrelic_trace# rewriting for module: {}",
             i.ident.to_string()
         );
+        */
         syn::fold::fold_item_mod(self, i)
     }
 
@@ -67,8 +70,10 @@ impl syn::fold::Fold for NewRelicTrace {
             return i;
         }
         let func_name = i.sig.ident.to_string();
+        /*
         #[cfg(debug_assertions)]
         println!("#newrelic_trace# rewriting for function: {}", func_name);
+        */
         let mut i = i;
         i.block = Box::new(NewRelicTrace::rewrite_block(
             &self.app_name,
@@ -83,11 +88,13 @@ impl syn::fold::Fold for NewRelicTrace {
             return i;
         }
         let method_name = i.sig.ident.to_string();
+        /*
         #[cfg(debug_assertions)]
         println!(
             "#newrelic_trace# rewriting for method name: {}",
             method_name
         );
+        */
         let mut i = i;
         i.block = NewRelicTrace::rewrite_block(&self.app_name, method_name, i.block);
         i

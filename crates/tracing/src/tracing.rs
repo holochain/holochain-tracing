@@ -3,20 +3,21 @@ use opentelemetry::{
     global::{self, BoxedSpan, BoxedTracer},
     sdk,
 };
-use tracing::Id;
+use tracing::{Id, Subscriber};
 use tracing_opentelemetry::OpentelemetryLayer;
 use tracing_subscriber::{layer::Layered, registry::LookupSpan, Layer, Registry};
 
 #[macro_export]
 macro_rules! follow_span {
-    ($name:expr, $context:expr) => {
+    ($level:expr, $context:expr) => {
         if let Some(context) = $context {
             // This isn't an Error but we need to make sure it always goes on the stack
             // It won't be reported to jaeger
-            let follow_span = ::tracing::error_span!(
+            let follow_span = ::tracing::span!(
                 target: module_path!(),
                 parent: None,
-                $name,
+                $level,
+                "follower",
                 follower = true
             );
             let id = follow_span.id();
@@ -28,13 +29,28 @@ macro_rules! follow_span {
     };
 }
 
+#[macro_export]
+macro_rules! span_wrap_encode {
+    ($level:expr, $data:expr) => {{
+        let span = ::tracing::span!(target: module_path!(), $level, "out_follower");
+        let id = span.id();
+        let _g = span.enter();
+        id.and_then(|id| $crate::tracing::span_context(&id).map(|context| context.wrap(())))
+            .unwrap_or_else(|| $crate::SpanWrap::new((), None))
+            .map(|_| $data)
+    }};
+}
+
 // TODO figure out how to create many spans and give the resulting IDs back to the dev
 #[macro_export]
 macro_rules! follow_spans {
     () => {};
 }
 
-pub fn init(service_name: String) -> Result<(), String> {
+pub(crate) fn init<S>(service_name: String) -> Result<impl Layer<S>, String>
+where
+    S: Subscriber + for<'span> LookupSpan<'span>,
+{
     let exporter = opentelemetry_jaeger::Exporter::builder()
         .with_agent_endpoint("127.0.0.1:6831".parse().map_err(|e| format!("{:?}", e))?)
         .with_process(opentelemetry_jaeger::Process {
@@ -53,9 +69,7 @@ pub fn init(service_name: String) -> Result<(), String> {
     global::set_provider(provider);
     let tracer = global::trace_provider().get_tracer("tracing");
     let opentelemetry = OpentelemetryLayer::with_tracer(tracer);
-    let subscriber = opentelemetry.with_subscriber(Registry::default());
-    tracing::subscriber::set_global_default(subscriber).map_err(|e| format!("{:?}", e))?;
-    Ok(())
+    Ok(opentelemetry)
 }
 
 pub fn span_context(id: &Id) -> Option<crate::SpanContext> {

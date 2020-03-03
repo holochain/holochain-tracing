@@ -12,32 +12,57 @@ use autotrace::Autotrace;
 use newrelic_trace::NewRelicTrace;
 use proc_macro::TokenStream;
 use quote::quote;
+use syn::spanned::Spanned;
 
 #[proc_macro_attribute]
 pub fn autotrace(_attr: TokenStream, code: TokenStream) -> TokenStream {
-    let mut at = Autotrace::default();
-    let output = syn::fold::fold_item(&mut at, syn::parse(code).unwrap());
-    TokenStream::from(quote! {#output})
+    if cfg!(feature = "tracing-on") {
+        let mut at = Autotrace::default();
+        let output = syn::fold::fold_item(&mut at, syn::parse(code).unwrap());
+        //TokenStream::from(quote! {#output})
+        let span = output.span();
+        TokenStream::from(quote::quote_spanned! {span=>
+            #output
+        })
+    } else {
+        code
+    }
 }
 
 #[proc_macro_attribute]
 pub fn autotrace_deep(_attr: TokenStream, code: TokenStream) -> TokenStream {
-    let mut at = Autotrace::deep();
-    let output = syn::fold::fold_item(&mut at, syn::parse(code).unwrap());
-    TokenStream::from(quote! {#output})
+    if cfg!(feature = "tracing-on") {
+        let mut at = Autotrace::deep();
+        let output = syn::fold::fold_item(&mut at, syn::parse(code).unwrap());
+        TokenStream::from(quote! {#output})
+    } else {
+        code
+    }
 }
 
 #[proc_macro]
 pub fn autotrace_deep_block(code: TokenStream) -> TokenStream {
-    let output = Autotrace::rewrite_deep(syn::parse(code).unwrap());
-    TokenStream::from(quote! {#output})
+    if cfg!(feature = "tracing-on") {
+        let output = Autotrace::rewrite_deep(syn::parse(code).unwrap());
+        TokenStream::from(quote! {#output})
+    } else {
+        code
+    }
 }
 
 #[proc_macro_attribute]
 pub fn newrelic_autotrace(attr: TokenStream, code: TokenStream) -> TokenStream {
-    let mut new_relic = NewRelicTrace::new(attr);
-    let output = syn::fold::fold_item(&mut new_relic, syn::parse(code).unwrap());
-    TokenStream::from(quote! {#output})
+    if cfg!(feature = "newrelic-on") {
+        let mut new_relic = NewRelicTrace::new(attr);
+        let output = syn::fold::fold_item(&mut new_relic, syn::parse(code).unwrap());
+        let span = output.span();
+        //dbg!(span.start());
+        TokenStream::from(quote::quote_spanned! {span=>
+            #output
+        })
+    } else {
+        code
+    }
 }
 
 #[proc_macro_attribute]

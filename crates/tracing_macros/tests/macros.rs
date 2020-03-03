@@ -59,12 +59,13 @@ mod mods {
 }
 
 //new relic trace for optimization wont work until new_relic_license_key is in scope
+use lazy_static::lazy_static;
+lazy_static! {
+    static ref NEW_RELIC_LICENSE_KEY: Option<String> = Some("1234".to_string());
+}
+#[allow(dead_code)]
 #[newrelic_autotrace(TEST)]
 mod mods_with_new_relic {
-    use lazy_static::lazy_static;
-    lazy_static! {
-        static ref NEW_RELIC_LICENSE_KEY: Option<String> = Some("1234".to_string());
-    }
     pub fn d(x: u32) -> u32 {
         e(x) * 10
     }

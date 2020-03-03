@@ -24,6 +24,7 @@ pub mod tracer_network;
 #[macro_use]
 pub mod tracing;
 mod utils;
+pub mod prelude;
 
 pub use rustracing::{sampler::*, tag::Tag};
 pub use rustracing_jaeger::{reporter, span::FinishedSpan, Tracer};
