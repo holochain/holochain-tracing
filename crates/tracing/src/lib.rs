@@ -21,10 +21,13 @@ pub mod structured;
 mod tag;
 pub mod tracer_console;
 pub mod tracer_network;
+
 #[macro_use]
+pub mod tracing_macros;
+pub mod prelude;
+#[cfg(feature = "experimental-jaeger")]
 pub mod tracing;
 mod utils;
-pub mod prelude;
 
 pub use rustracing::{sampler::*, tag::Tag};
 pub use rustracing_jaeger::{reporter, span::FinishedSpan, Tracer};

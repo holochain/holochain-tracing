@@ -306,7 +306,6 @@ dependencies = [
  "shrinkwraprs",
  "tracing",
  "tracing-core",
- "tracing-opentelemetry",
  "tracing-serde",
  "tracing-subscriber",
 ]
@@ -1045,17 +1044,6 @@ dependencies = [
  "lazy_static",
  "log",
  "tracing-core",
-]
-
-[[package]]
-name = "tracing-opentelemetry"
-version = "0.2.0"
-source = "git+https://github.com/freesig/tracing-opentelemetry.git?branch=holochain#4438efab1b4f3f0872f530187a65081aeed8a039"
-dependencies = [
- "opentelemetry",
- "rand 0.7.3",
- "tracing-core",
- "tracing-subscriber",
 ]
 
 [[package]]
