@@ -42,7 +42,7 @@ impl Autotrace {
     pub(crate) fn rewrite_deep(mut block: syn::Block) -> syn::Block {
         let mut new_statements = vec![];
         for s in block.stmts {
-            let span = proc_macro2::Span::from(s.span()).unwrap();
+            let span = s.span().unwrap();
             let name = format!(
                 "Deep file: {}:{}->{}",
                 span.source_file().path().display(),
@@ -103,7 +103,7 @@ impl syn::fold::Fold for Autotrace {
         if i.sig.constness.is_some() || self.is_no_autotrace(&i.attrs) {
             return i;
         }
-        let span = proc_macro2::Span::from(i.span()).unwrap();
+        let span = i.span().unwrap();
         let func_name = format!(
             "{} in {}:{} (auto:fn)",
             i.sig.ident,
@@ -125,7 +125,7 @@ impl syn::fold::Fold for Autotrace {
         if i.sig.constness.is_some() || self.is_no_autotrace(&i.attrs) {
             return i;
         }
-        let span = proc_macro2::Span::from(i.span()).unwrap();
+        let span = i.span().unwrap();
         let method_name = format!(
             "{} in {}:{} (auto:method)",
             i.sig.ident,

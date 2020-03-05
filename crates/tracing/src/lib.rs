@@ -17,9 +17,16 @@ mod span;
 mod span_context;
 mod span_wrap;
 mod stack;
+pub mod structured;
 mod tag;
 pub mod tracer_console;
 pub mod tracer_network;
+
+#[macro_use]
+pub mod tracing_macros;
+pub mod prelude;
+#[cfg(feature = "experimental-jaeger")]
+pub mod tracing;
 mod utils;
 
 pub use rustracing::{sampler::*, tag::Tag};

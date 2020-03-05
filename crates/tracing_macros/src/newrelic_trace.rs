@@ -20,6 +20,7 @@ impl NewRelicTrace {
     fn rewrite_block(app_name: &String, name: String, block: syn::Block) -> syn::Block {
         let new_block = quote! {
         {
+            use crate::NEW_RELIC_LICENSE_KEY;
             //if new relic is somehow down or the daemon is not running, the program should continue normally
             //stated away from combinators because of closure ownership
             let _transaction = if let Some(license_key) = &*NEW_RELIC_LICENSE_KEY
