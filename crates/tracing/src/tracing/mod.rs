@@ -120,6 +120,8 @@ pub(crate) fn tracing_context(context: &crate::SpanContext) -> Option<api::SpanC
         .ok()
         .map(|trace_id| api::SpanContext::new(trace_id, context.span_id(), 1, false))
 }
+
+#[doc(hidden)]
 pub fn __follow(span: &tracing::Span, context: &crate::SpanContext) {
     let context = tracing_context(context);
     tracing::dispatcher::get_default(|dispatch| {
