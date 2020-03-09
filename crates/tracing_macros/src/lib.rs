@@ -6,9 +6,11 @@ extern crate quote;
 extern crate syn;
 
 mod autotrace;
+#[cfg(feature = "newrelic_on")]
 mod newrelic_trace;
 
 use autotrace::Autotrace;
+#[cfg(feature = "newrelic_on")]
 use newrelic_trace::NewRelicTrace;
 use proc_macro::TokenStream;
 use quote::quote;
@@ -49,18 +51,21 @@ pub fn autotrace_deep_block(code: TokenStream) -> TokenStream {
     }
 }
 
+#[cfg(feature = "newrelic_on")]
 #[proc_macro_attribute]
 pub fn newrelic_autotrace(attr: TokenStream, code: TokenStream) -> TokenStream {
-    if cfg!(feature = "newrelic-on") {
-        let mut new_relic = NewRelicTrace::new(attr);
-        let output = syn::fold::fold_item(&mut new_relic, syn::parse(code).unwrap());
-        let span = output.span();
-        TokenStream::from(quote::quote_spanned! {span=>
-            #output
-        })
-    } else {
-        code
-    }
+    let mut new_relic = NewRelicTrace::new(attr);
+    let output = syn::fold::fold_item(&mut new_relic, syn::parse(code).unwrap());
+    let span = output.span();
+    TokenStream::from(quote::quote_spanned! {span=>
+        #output
+    })
+}
+
+#[cfg(not(feature = "newrelic_on"))]
+#[proc_macro_attribute]
+pub fn newrelic_autotrace(_attr: TokenStream, code: TokenStream) -> TokenStream {
+    code
 }
 
 #[proc_macro_attribute]
