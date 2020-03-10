@@ -2,7 +2,6 @@ use tracing::{Event, Subscriber};
 use tracing_core::field::Field;
 use tracing_serde::AsSerde;
 use tracing_subscriber::fmt::{time::ChronoUtc, FmtContext, FormatFields};
-use tracing_subscriber::layer::Layer;
 use tracing_subscriber::{field::Visit, filter::EnvFilter, registry::LookupSpan, FmtSubscriber};
 
 use serde_json::json;
@@ -119,29 +118,30 @@ pub fn init_fmt(output: Output, jaeger: Option<String>) -> Result<(), String> {
     match output {
         Output::Json => {
             let subscriber = subscriber
+                .with_env_filter(filter)
                 .with_timer(ChronoUtc::rfc3339())
                 .json()
                 .event_format(fm);
-            finish(subscriber.finish(), jaeger, filter)
+            finish(subscriber.finish(), jaeger)
         }
-        Output::Log => finish(subscriber.finish(), jaeger, filter),
+        Output::Log => finish(subscriber.with_env_filter(filter).finish(), jaeger),
         Output::Compact => {
             let subscriber = subscriber.compact();
-            finish(subscriber.finish(), jaeger, filter)
+            finish(subscriber.with_env_filter(filter).finish(), jaeger)
         }
         Output::None => Ok(()),
     }
 }
 
 #[cfg(feature = "experimental-jaeger")]
-fn finish<S>(subscriber: S, jaeger: Option<String>, filter: EnvFilter) -> Result<(), String>
+fn finish<S>(subscriber: S, jaeger: Option<String>) -> Result<(), String>
 where
     S: Subscriber + Send + Sync + for<'span> LookupSpan<'span>,
 {
     match jaeger {
         Some(name) => {
             let layer = crate::tracing::init(name)?;
-            let subscriber = layer.and_then(filter).with_subscriber(subscriber);
+            let subscriber = layer.with_subscriber(subscriber);
             tracing::subscriber::set_global_default(subscriber).map_err(|e| format!("{:?}", e))
         }
         None => {
@@ -152,13 +152,12 @@ where
 }
 
 #[cfg(not(feature = "experimental-jaeger"))]
-fn finish<S>(subscriber: S, jaeger: Option<String>, filter: EnvFilter) -> Result<(), String>
+fn finish<S>(subscriber: S, jaeger: Option<String>) -> Result<(), String>
 where
     S: Subscriber + Send + Sync + for<'span> LookupSpan<'span>,
 {
     if let Some(_) = jaeger {
         eprintln!("Trying to use jaeger but feature experimental-jaeger flag is off");
     }
-    let subscriber = filter.with_subscriber(subscriber);
     tracing::subscriber::set_global_default(subscriber).map_err(|e| format!("{:?}", e))
 }
