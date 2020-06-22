@@ -16,13 +16,13 @@ proc-macro = true
 
 [dependencies]
 holochain_tracing = { version = "=0.0.24", path = "../tracing"}
-syn = { version = "1.0.8", features = ["full", "fold"] }
+syn = { version = "=1.0.8", features = ["full", "fold"] }
 quote = "=1.0.3"
 crossbeam-channel = "=0.3.8"
 log = "0.4.8"
-newrelic = { version = "0.2", optional = true }
+newrelic = { version = "=0.2", optional = true }
 lazy_static = "=1.4.0"
-proc-macro2 = { version = "1.0.8", features = ["span-locations"] }
+proc-macro2 = { version = "=1.0.8", features = ["span-locations"] }
 
 [features]
 default = ["tracing-on"]
